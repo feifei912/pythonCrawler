@@ -84,7 +84,6 @@ class ScraperGUI:
             messagebox.showerror("错误", f"运行脚本时出错:\n{str(e)}")
 
 
-
 if __name__ == "__main__":
     root = tk.Tk()
     app = ScraperGUI(root)
