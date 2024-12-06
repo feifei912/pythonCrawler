@@ -14,15 +14,14 @@
 #### 使用说明
 
 1.  测试chromeDriver运行状况
-'''python
+   
   from selenium import webdriver
   if __name__ == '__main__':
-  
       driver = webdriver.Chrome()
       url = 'https://www.baidu.com/'
       driver.get(url)
       driver.maximize_window()
-'''
+
 3.  xxxx
 4.  xxxx
 
