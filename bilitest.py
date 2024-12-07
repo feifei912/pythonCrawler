@@ -84,7 +84,6 @@ for i, item in enumerate(data):
         print(f"绘图错误: {e}, 视频: {item['title']}")
 
 if __name__ == '__main__':
-
     # 保存最终的展示图片
     output_file = "output.png"
     plt.tight_layout()
