@@ -1,6 +1,5 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -15,14 +14,13 @@ def fetch_news_with_categories(max_pages=5):
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
 
-    # 替换为实际 ChromeDriver 路径
-    service = Service('C:\\Program Files\\Google\\Chrome\\Application\\chromedriver.exe')
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    # 不再指定绝对路径，自动从系统 PATH 中查找 ChromeDriver
+    driver = webdriver.Chrome(options=chrome_options)
 
     # 创建 CSV 文件存储结果
     with open("sina_realTimeNews.csv", mode="w", encoding="utf-8-sig", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["类别", "标题", "链接", "时间"])
+        writer.writerow(["标题", "链接", "时间"])  # 如果你不需要类别，删除类别列
 
         print("开始抓取新闻：")
         try:
