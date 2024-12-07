@@ -53,7 +53,6 @@ def download_bilibili_covers(save_folder):
                 image = Image.open(BytesIO(response.content))
                 image_path = os.path.join(save_folder, f"{safe_title}.jpg")
                 image.save(image_path)
-                print(f"图片已保存至: {image_path}")
             else:
                 print(f"下载失败，状态码: {response.status_code}, URL: {cover_url}")
 
