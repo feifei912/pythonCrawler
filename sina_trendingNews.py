@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import os
 import csv
 
 def fetch_news_with_categories():
@@ -18,8 +19,14 @@ def fetch_news_with_categories():
     url = "https://news.sina.com.cn/hotnews/#1"
     driver.get(url)
 
+    folder_name = 'News'
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+        print(f"文件夹 '{folder_name}' 已创建。")
+
+    csv_file_path = os.path.join(folder_name, "sina_trendingNews.csv")
     # 创建 CSV 文件存储结果
-    with open("sina_trendingNews.csv", mode="w", encoding="utf-8-sig", newline="") as file:
+    with open(csv_file_path, mode="w", encoding="utf-8-sig", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["类别", "标题", "链接"])  # CSV 文件的表头
 
