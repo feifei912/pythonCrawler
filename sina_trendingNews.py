@@ -1,6 +1,5 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -12,9 +11,8 @@ def fetch_news_with_categories():
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-gpu")
 
-    # 替换为实际 ChromeDriver 路径
-    service = Service('C:\\Program Files\\Google\\Chrome\\Application\\chromedriver.exe')
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    # 从系统 PATH 中查找 ChromeDriver
+    driver = webdriver.Chrome(options=chrome_options)
 
     # 打开页面
     url = "https://news.sina.com.cn/hotnews/#1"
@@ -23,7 +21,7 @@ def fetch_news_with_categories():
     # 创建 CSV 文件存储结果
     with open("sina_trendingNews.csv", mode="w", encoding="utf-8-sig", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["类别", "标题", "链接"])
+        writer.writerow(["类别", "标题", "链接"])  # CSV 文件的表头
 
         print("每日排行新闻：")
         try:
@@ -39,6 +37,8 @@ def fetch_news_with_categories():
                 try:
                     # 提取类别名称
                     category_name = block.find_element(By.CSS_SELECTOR, ".lbti h2").text.strip()
+                    if not category_name:
+                        continue  # 跳过没有类别的块
                     print(f"\n类别: {category_name}")
 
                     # 提取该类别下的新闻表格行
@@ -54,9 +54,9 @@ def fetch_news_with_categories():
                             title = title_element.text.strip()
                             url = title_element.get_attribute("href")
 
-                            if title:  # 过滤标题为空的新闻
-                                print(f"标题: {title}, 链接: {url}")
-                                writer.writerow([category_name, title, url])
+                            if title and url:  # 确保标题和链接都存在
+                                print(f"标题: {title}, \n链接: {url}")
+                                writer.writerow([category_name, title, url])  # 格式化写入
                         except Exception as e:
                             print(f"解析新闻条目失败: {e}")
                             continue  # 忽略异常行
