@@ -44,8 +44,6 @@ def fetch_news_with_categories(max_pages=5):
 
                 for item in news_items:
                     try:
-                        # 提取类别名称
-                        category = item.find_element(By.CSS_SELECTOR, ".c_chl").text.strip()
                         # 提取新闻标题
                         title_element = item.find_element(By.CSS_SELECTOR, ".c_tit a")
                         title = title_element.text.strip()
@@ -55,8 +53,8 @@ def fetch_news_with_categories(max_pages=5):
                         time_text = item.find_element(By.CSS_SELECTOR, ".c_time").text.strip()
 
                         if title and link:
-                            print(f"类别: {category}, 标题: {title}, 链接: {link}, 时间: {time_text}")
-                            writer.writerow([category, title, link, time_text])
+                            print(f"标题: {title},\n时间: {time_text},\n链接: {link}\n")
+                            writer.writerow([title, link, time_text])
                     except Exception as e:
                         print(f"解析新闻条目失败: {e}")
                         continue  # 忽略异常行
