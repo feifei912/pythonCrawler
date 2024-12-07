@@ -7,8 +7,9 @@
 
 #### 安装教程
 
-1.  安装必要库pip install pathlib ruamel-yaml requests beautifulsoup4 matplotlib pillow selenium
-2.  安装chromedriver，配置环境变量
+1.  安装必要库pip install pathlib ruamel-yaml requests beautifulsoup4 matplotlib pillow 
+pip install selenium==4.5.1 -i  https://pypi.douban.com/simple/ 
+3.  安装chromedriver，配置环境变量
 ___
 版本在114及以下：http://chromedriver.storage.googleapis.com/index.html  
 版本在127：https://googlechromelabs.github.io/chrome-for-testing/#stable  
