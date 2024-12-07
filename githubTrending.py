@@ -46,7 +46,7 @@ def get_github_trending(url):
             # 提取链接
             link = "https://github.com" + name_tag.a['href'] if name_tag and name_tag.a else "无链接"
 
-            print(f"{index}. 程序：{project_name}；跳转：{link}")
+            print(f"{index}. 程序：{project_name}；\n跳转：{link}\n")
 
         # 添加延迟，避免频繁爬取触发反爬
         time.sleep(random.uniform(1, 3))
