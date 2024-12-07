@@ -1,11 +1,13 @@
+import os
+import csv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import csv
 import time
 import random
+
 
 def fetch_news_with_categories(max_pages=5):
     # 配置无头浏览器
@@ -17,10 +19,16 @@ def fetch_news_with_categories(max_pages=5):
     # 不再指定绝对路径，自动从系统 PATH 中查找 ChromeDriver
     driver = webdriver.Chrome(options=chrome_options)
 
-    # 创建 CSV 文件存储结果
-    with open("sina_realTimeNews.csv", mode="w", encoding="utf-8-sig", newline="") as file:
+    folder_name = 'News'
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+        print(f"文件夹 '{folder_name}' 已创建。")
+
+    # 创建 CSV 文件存储结果，在 News 文件夹内
+    csv_file_path = os.path.join(folder_name, "sina_realTimeNews.csv")
+    with open(csv_file_path, mode="w", encoding="utf-8-sig", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["标题", "链接", "时间"])  # 如果你不需要类别，删除类别列
+        writer.writerow(["标题", "链接", "时间"])
 
         print("开始抓取新闻：")
         try:
@@ -65,6 +73,7 @@ def fetch_news_with_categories(max_pages=5):
         finally:
             # 关闭浏览器
             driver.quit()
+
 
 if __name__ == "__main__":
     fetch_news_with_categories(max_pages=5)  # 抓取前 5 页
