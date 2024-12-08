@@ -8,7 +8,6 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 import random
 
-
 def fetch_news_with_categories(max_pages=5):
     # 配置无头浏览器
     chrome_options = Options()
@@ -37,9 +36,6 @@ def fetch_news_with_categories(max_pages=5):
                 print(f"抓取第 {page} 页: {url}")
                 driver.get(url)
 
-                # 强制刷新页面以避免缓存问题
-                driver.refresh()
-
                 # 等待主要内容加载完成
                 WebDriverWait(driver, 10).until(
                     EC.presence_of_all_elements_located((By.CSS_SELECTOR, "#d_list ul li"))
@@ -65,15 +61,16 @@ def fetch_news_with_categories(max_pages=5):
                         print(f"解析新闻条目失败: {e}")
                         continue  # 忽略异常行
 
-                # 等待一段时间，避免过于频繁的请求
-                time.sleep(random.uniform(2, 5))
+                # 随机休眠，避免过于频繁的请求
+                sleep_time = random.uniform(2, 5)
+                print(f"等待 {sleep_time:.2f} 秒...")
+                time.sleep(sleep_time)
 
         except Exception as e:
             print("解析页面失败:", e)
         finally:
             # 关闭浏览器
             driver.quit()
-
 
 if __name__ == "__main__":
     fetch_news_with_categories(max_pages=5)  # 抓取前 5 页
