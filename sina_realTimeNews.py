@@ -61,10 +61,11 @@ def fetch_news_with_categories(max_pages=5):
                         print(f"解析新闻条目失败: {e}")
                         continue  # 忽略异常行
 
-                # 随机休眠，避免过于频繁的请求
-                sleep_time = random.uniform(2, 5)
-                print(f"等待 {sleep_time:.2f} 秒...")
-                time.sleep(sleep_time)
+                # 检查是否为最后一页，如果是，跳过等待
+                if page < max_pages:
+                    sleep_time = random.uniform(2, 5)
+                    print(f"等待 {sleep_time:.2f} 秒...")
+                    time.sleep(sleep_time)
 
         except Exception as e:
             print("解析页面失败:", e)
