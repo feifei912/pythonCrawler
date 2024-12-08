@@ -45,7 +45,7 @@ def download_bilibili_covers(save_folder, url):
     # 获取视频封面并下载
     videos = driver.find_elements(By.CSS_SELECTOR, '.video-card')
 
-    for video in videos[:30]:  # 只处理前10个视频
+    for video in videos[:30]:  # 只处理前30个视频
         try:
             title_element = video.find_element(By.CSS_SELECTOR, '.video-name')
             up_name_element = video.find_element(By.CSS_SELECTOR, '.up-name__text')
