@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Scraper</title>
+</head>
+<body>
+    <h1>Web Scraper</h1>
+
+    <h2>GitHub Trending</h2>
+    <button onclick="scrapeGitHub('weekly')">Weekly</button>
+    <button onclick="scrapeGitHub('monthly')">Monthly</button>
+    <button onclick="scrapeGitHub('yearly')">Yearly</button>
+    <pre id="github-results"></pre>
+
+    <h2>Bilibili Covers</h2>
+    <button onclick="scrapeBilibili('history')">History</button>
+    <button onclick="scrapeBilibili('weekly')">Weekly</button>
+    <pre id="bilibili-results"></pre>
+
+    <h2>Sina News</h2>
+    <button onclick="scrapeSina('realtime')">Realtime News</button>
+    <button onclick="scrapeSina('trending')">Trending News</button>
+    <pre id="sina-results"></pre>
+
+    <script>
+        function scrapeGitHub(timeRange) {
+            fetch(`/scrape/github?time_range=` + timeRange)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('github-results').textContent = JSON.stringify(data, null, 2);
+                });
+        }
+
+        function scrapeBilibili(videoType) {
+            fetch(`/scrape/bilibili?video_type=` + videoType)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('bilibili-results').textContent = JSON.stringify(data, null, 2);
+                });
+        }
+
+        function scrapeSina(newsType) {
+            fetch(`/scrape/sina?news_type=` + newsType)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('sina-results').textContent = JSON.stringify(data, null, 2);
+                });
+        }
+    </script>
+</body>
+</html>
