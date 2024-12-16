@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pythonCrawler</title>
+    <script>
+        async function runCrawler(crawlerType) {
+            const option = document.getElementById(`${crawlerType}-option`).value;
+            const pages = document.getElementById(`${crawlerType}-pages`) ? document.getElementById(`${crawlerType}-pages`).value : 5;
+            const response = await fetch('/run_crawler', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ crawler_type: crawlerType, option, pages })
+            });
+            const result = await response.json();
+            document.getElementById(`${crawlerType}-output`).innerHTML = result.join('<br>');
+        }
+    </script>
+</head>
+<body>
+    <h1>pythonCrawler</h1>
+    <div>
+        <h2>Sina News Fetcher</h2>
+        <select id="sina-option">
+            <option value="realtime">实时新闻</option>
+            <option value="trending">热门新闻</option>
+        </select>
+        <input type="number" id="sina-pages" placeholder="页数 (默认5)">
+        <button onclick="runCrawler('sina')">运行新浪新闻爬虫</button>
+        <div id="sina-output"></div>
+    </div>
+    <div>
+        <h2>GitHub Trending Fetcher</h2>
+        <select id="github-option">
+            <option value="weekly">每周</option>
+            <option value="monthly">每月</option>
+            <option value="yearly">全年</option>
+        </select>
+        <button onclick="runCrawler('github')">运行GitHub热门项目爬虫</button>
+        <div id="github-output"></div>
+    </div>
+    <div>
+        <h2>Bilibili Covers Fetcher</h2>
+        <select id="bilibili-option">
+            <option value="history">入站必刷视频</option>
+            <option value="weekly">每周必看视频</option>
+        </select>
+        <button onclick="runCrawler('bilibili')">运行Bilibili封面爬虫</button>
+        <div id="bilibili-output"></div>
+    </div>
+</body>
+</html>
