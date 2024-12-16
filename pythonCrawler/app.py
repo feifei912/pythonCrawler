@@ -47,5 +47,6 @@ def scrape_sina():
     driver.quit()
     return jsonify(news)
 
+
 if __name__ == '__main__':
     app.run(debug=True)
