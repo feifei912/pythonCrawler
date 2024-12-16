@@ -77,6 +77,7 @@ class BilibiliCoversFetcher:
                 else:
                     print(f"下载失败，状态码: {response.status_code}, URL: {cover_url}")
 
+
             except Exception as e:
                 print(f"处理视频错误: {e}")
 
