@@ -20,13 +20,7 @@ def main():
         current_script_path = os.path.abspath(__file__)
         parent_directory = os.path.dirname(os.path.dirname(current_script_path))
 
-        # 创建保存新闻的文件夹
-        folder_name = os.path.join(parent_directory, 'News')
-        os.makedirs(folder_name, exist_ok=True)
-        print(f"文件夹 '{folder_name}' 已创建。")
-
         # 初始化各个爬虫类
-        sina_fetcher = SinaNewsFetcher(driver, folder_name)
         github_fetcher = GitHubTrendingFetcher()
         bilibili_fetcher = BilibiliCoversFetcher(driver, 'BilibiliCovers')
 
@@ -41,13 +35,22 @@ def main():
 
             choice = input("请输入数字选择：").strip()
 
-            if choice == '1':
-                # 抓取新浪实时新闻
-                pages = int(input("请输入要抓取的实时新闻页数（默认5页）：") or 5)
-                sina_fetcher.fetch_realtime_news(max_pages=pages)
-            elif choice == '2':
-                # 抓取新浪热门排行新闻
-                sina_fetcher.fetch_trending_news()
+            if choice == '1' or choice == '2':
+                # 创建保存新闻的文件夹
+                folder_name = os.path.join(parent_directory, 'News')
+                os.makedirs(folder_name, exist_ok=True)
+                print(f"文件夹 '{folder_name}' 已创建。")
+
+                # 初始化 SinaNewsFetcher
+                sina_fetcher = SinaNewsFetcher(driver, folder_name)
+
+                if choice == '1':
+                    # 抓取新浪实时新闻
+                    pages = int(input("请输入要抓取的实时新闻页数（默认5页）：") or 5)
+                    sina_fetcher.fetch_realtime_news(max_pages=pages)
+                elif choice == '2':
+                    # 抓取新浪热门排行新闻
+                    sina_fetcher.fetch_trending_news()
             elif choice == '3':
                 # 抓取 GitHub 热门项目
                 print("请选择爬取的时间范围：")
