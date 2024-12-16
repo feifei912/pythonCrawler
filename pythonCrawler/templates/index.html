@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>爬虫数据展示</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">爬虫数据展示</h1>
+        <div class="d-flex justify-content-center mb-4">
+            <button id="fetch-sina-news" class="btn btn-primary mx-2">抓取新浪新闻</button>
+            <button id="fetch-github-trending-weekly" class="btn btn-secondary mx-2">抓取GitHub周热门</button>
+            <button id="fetch-github-trending-monthly" class="btn btn-success mx-2">抓取GitHub月热门</button>
+            <button id="fetch-github-trending-yearly" class="btn btn-danger mx-2">抓取GitHub年热门</button>
+            <button id="fetch-bilibili-covers-history" class="btn btn-warning mx-2">抓取Bilibili历史视频封面</button>
+            <button id="fetch-bilibili-covers-weekly" class="btn btn-info mx-2">抓取Bilibili每周视频封面</button>
+        </div>
+        <div id="output" class="mt-4"></div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $('#fetch-sina-news').click(function () {
+                $.get('/fetch_sina_news', function (data) {
+                    $('#output').html('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
+                });
+            });
+
+            $('#fetch-github-trending-weekly').click(function () {
+                $.get('/fetch_github_trending/weekly', function (data) {
+                    $('#output').html('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
+                });
+            });
+
+            $('#fetch-github-trending-monthly').click(function () {
+                $.get('/fetch_github_trending/monthly', function (data) {
+                    $('#output').html('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
+                });
+            });
+
+            $('#fetch-github-trending-yearly').click(function () {
+                $.get('/fetch_github_trending/yearly', function (data) {
+                    $('#output').html('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
+                });
+            });
+
+            $('#fetch-bilibili-covers-history').click(function () {
+                $.get('/fetch_bilibili_covers/history', function (data) {
+                    $('#output').html('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
+                });
+            });
+
+            $('#fetch-bilibili-covers-weekly').click(function () {
+                $.get('/fetch_bilibili_covers/weekly', function (data) {
+                    $('#output').html('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
