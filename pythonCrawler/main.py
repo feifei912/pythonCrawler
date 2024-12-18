@@ -4,6 +4,7 @@ from selenium.webdriver.chrome.options import Options
 from sina_news_fetcher import SinaNewsFetcher
 from github_trending_fetcher import GitHubTrendingFetcher, TRENDING_URLS
 from bilibili_covers_fetcher import BilibiliCoversFetcher
+from university_rankings_fetcher import UniversityRankingsFetcher
 
 def main():
     # 设置 Chrome 浏览器选项
@@ -31,6 +32,7 @@ def main():
             print("2. 新浪热门排行新闻")
             print("3. GitHub 热门项目")
             print("4. Bilibili 视频封面")
+            print("5. 2022软科中国大学排名")
             print("0. 退出")
 
             choice = input("请输入数字选择：").strip()
@@ -80,6 +82,11 @@ def main():
                     bilibili_fetcher.download_bilibili_covers("https://www.bilibili.com/v/popular/weekly")
                 else:
                     print("无效选项，程序结束。")
+            elif choice == '5':
+                # 抓取中国大学排名
+                rankings_fetcher = UniversityRankingsFetcher('UniversityRankings')
+                rankings = rankings_fetcher.fetch_rankings()
+                rankings_fetcher.save_to_csv(rankings)
             elif choice == '0':
                 # 退出程序
                 print("程序已退出。")
