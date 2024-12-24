@@ -12,7 +12,6 @@
   <style>
     /* 移除已弃用的 -ms-high-contrast，并替换为 forced-colors 如有需要 */
     @media (forced-colors: active) {
-      /* 在强制色彩模式下进行相应调整 */
       body {
         forced-color-adjust: none;
       }
@@ -30,7 +29,7 @@
       color: #fff;
       padding: 1em;
       text-align: center;
-      margin-bottom: 1em;
+      margin-bottom: 2em;
     }
 
     h1 {
@@ -39,51 +38,93 @@
 
     .container {
       width: 90%;
-      max-width: 900px;
+      max-width: 1200px;
       margin: 0 auto;
     }
 
-    .section {
+    .controls-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 2em;
+    }
+
+    .control-group {
+      flex: 1;
       background: #fff;
-      padding: 1em;
-      margin-bottom: 1em;
-      border-radius: 4px;
+      padding: 1.5em;
+      border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
-    .section h2 {
+    .control-group h2 {
       margin-top: 0;
+      margin-bottom: 1em;
+      font-size: 1.2em;
+      color: #333;
+    }
+
+    .control-inputs {
+      display: flex;
+      gap: 10px;
+      align-items: center;
     }
 
     select, input[type="number"] {
-      margin: 0.5em 0;
-      padding: 0.4em;
+      padding: 0.6em;
       border: 1px solid #ccc;
       border-radius: 4px;
+      flex: 1;
     }
 
     button {
       background-color: #0073e6;
       color: #fff;
-      padding: 0.5em 1em;
-      margin-bottom: 1em;
+      padding: 0.6em 1.2em;
       border: none;
       border-radius: 4px;
       cursor: pointer;
+      white-space: nowrap;
     }
 
     button:hover {
       background-color: #005bb5;
     }
 
+    .output-section {
+      background: #fff;
+      padding: 2em;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
     .output-area {
-      margin-top: 0.5em;
-      padding: 1em;
-      border: 1px solid #ccc;
+      margin-top: 1em;
+      padding: 1.5em;
+      border: 1px solid #eee;
       border-radius: 4px;
       background-color: #f9f9f9;
       font-family: monospace;
       white-space: pre-line;
+      min-height: 200px;
+    }
+
+    .tab-buttons {
+      margin-bottom: 1em;
+    }
+
+    .tab-button {
+      padding: 0.5em 1em;
+      margin-right: 0.5em;
+      background-color: #f0f0f0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .tab-button.active {
+      background-color: #0073e6;
+      color: white;
     }
   </style>
 
@@ -92,6 +133,9 @@
       const option = document.getElementById(`${crawlerType}-option`).value;
       const pagesElement = document.getElementById(`${crawlerType}-pages`);
       const pages = pagesElement ? pagesElement.value : 5;
+
+      // 设置对应的标签为活跃状态
+      setActiveTab(crawlerType);
 
       try {
         const response = await fetch('/run_crawler', {
@@ -103,15 +147,17 @@
         });
 
         const result = await response.json();
-
-        if (Array.isArray(result)) {
-          document.getElementById(`${crawlerType}-output`).innerHTML = result.join('\n');
-        } else {
-          document.getElementById(`${crawlerType}-output`).innerHTML = JSON.stringify(result);
-        }
+        document.getElementById('output-content').innerHTML = Array.isArray(result) ? result.join('\n') : JSON.stringify(result);
       } catch (error) {
-        document.getElementById(`${crawlerType}-output`).innerHTML = "Error: " + error;
+        document.getElementById('output-content').innerHTML = "Error: " + error;
       }
+    }
+
+    function setActiveTab(crawlerType) {
+      // 移除所有标签的活跃状态
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      // 设置当前标签为活跃状态
+      document.querySelector(`[data-crawler="${crawlerType}"]`).classList.add('active');
     }
   </script>
 </head>
@@ -121,46 +167,54 @@
   </header>
 
   <div class="container">
-    <!-- 新浪新闻爬虫部分 -->
-    <div class="section">
-      <h2>Sina News Fetcher</h2>
-      <p>可选择获取实时新闻或热门新闻，可按需指定页数。</p>
-      <select id="sina-option">
-        <option value="realtime">实时新闻</option>
-        <option value="trending">热门新闻</option>
-      </select>
-      <br>
-      <input type="number" id="sina-pages" placeholder="页数 (默认5)" />
-      <br>
-      <button onclick="runCrawler('sina')">运行新浪新闻爬虫</button>
-      <div id="sina-output" class="output-area"></div>
+    <div class="controls-container">
+      <!-- 新浪新闻爬虫控制组 -->
+      <div class="control-group">
+        <h2>Sina News Fetcher</h2>
+        <div class="control-inputs">
+          <select id="sina-option">
+            <option value="realtime">实时新闻</option>
+            <option value="trending">热门新闻</option>
+          </select>
+          <input type="number" id="sina-pages" placeholder="页数" value="5" style="width: 80px"/>
+          <button onclick="runCrawler('sina')">获取新闻</button>
+        </div>
+      </div>
+
+      <!-- GitHub 热门项目爬虫控制组 -->
+      <div class="control-group">
+        <h2>GitHub Trending Fetcher</h2>
+        <div class="control-inputs">
+          <select id="github-option">
+            <option value="weekly">每周</option>
+            <option value="monthly">每月</option>
+            <option value="yearly">全年</option>
+          </select>
+          <button onclick="runCrawler('github')">获取项目</button>
+        </div>
+      </div>
+
+      <!-- Bilibili 视频封面爬虫控制组 -->
+      <div class="control-group">
+        <h2>Bilibili Covers Fetcher</h2>
+        <div class="control-inputs">
+          <select id="bilibili-option">
+            <option value="history">入站必刷</option>
+            <option value="weekly">每周必看</option>
+          </select>
+          <button onclick="runCrawler('bilibili')">获取封面</button>
+        </div>
+      </div>
     </div>
 
-    <!-- GitHub 热门项目爬虫部分 -->
-    <div class="section">
-      <h2>GitHub Trending Fetcher</h2>
-      <p>选择时间范围，以获取 GitHub 上热门项目。</p>
-      <select id="github-option">
-        <option value="weekly">每周</option>
-        <option value="monthly">每月</option>
-        <option value="yearly">全年</option>
-      </select>
-      <br>
-      <button onclick="runCrawler('github')">运行GitHub热门项目爬虫</button>
-      <div id="github-output" class="output-area"></div>
-    </div>
-
-    <!-- Bilibili 视频封面爬虫部分 -->
-    <div class="section">
-      <h2>Bilibili Covers Fetcher</h2>
-      <p>选择获取“历史热门”或“每周必看”视频封面。</p>
-      <select id="bilibili-option">
-        <option value="history">入站必刷视频</option>
-        <option value="weekly">每周必看视频</option>
-      </select>
-      <br>
-      <button onclick="runCrawler('bilibili')">运行Bilibili封面爬虫</button>
-      <div id="bilibili-output" class="output-area"></div>
+    <!-- 统一的输出区域 -->
+    <div class="output-section">
+      <div class="tab-buttons">
+        <button class="tab-button" data-crawler="sina">新浪新闻</button>
+        <button class="tab-button" data-crawler="github">GitHub 热门</button>
+        <button class="tab-button" data-crawler="bilibili">Bilibili 封面</button>
+      </div>
+      <div id="output-content" class="output-area"></div>
     </div>
   </div>
 </body>
