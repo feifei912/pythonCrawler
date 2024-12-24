@@ -1,55 +1,167 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>pythonCrawler</title>
-    <script>
-        async function runCrawler(crawlerType) {
-            const option = document.getElementById(`${crawlerType}-option`).value;
-            const pages = document.getElementById(`${crawlerType}-pages`) ? document.getElementById(`${crawlerType}-pages`).value : 5;
-            const response = await fetch('/run_crawler', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ crawler_type: crawlerType, option, pages })
-            });
-            const result = await response.json();
-            document.getElementById(`${crawlerType}-output`).innerHTML = result.join('<br>');
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- 网页标题与 Favicon -->
+  <title>pythonCrawler</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon"/>
+
+  <!-- 基础样式 -->
+  <style>
+    /* 移除已弃用的 -ms-high-contrast，并替换为 forced-colors 如有需要 */
+    @media (forced-colors: active) {
+      /* 在强制色彩模式下进行相应调整 */
+      body {
+        forced-color-adjust: none;
+      }
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+    }
+
+    header {
+      background-color: #0073e6;
+      color: #fff;
+      padding: 1em;
+      text-align: center;
+      margin-bottom: 1em;
+    }
+
+    h1 {
+      margin: 0;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .section {
+      background: #fff;
+      padding: 1em;
+      margin-bottom: 1em;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .section h2 {
+      margin-top: 0;
+    }
+
+    select, input[type="number"] {
+      margin: 0.5em 0;
+      padding: 0.4em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      background-color: #0073e6;
+      color: #fff;
+      padding: 0.5em 1em;
+      margin-bottom: 1em;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #005bb5;
+    }
+
+    .output-area {
+      margin-top: 0.5em;
+      padding: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      font-family: monospace;
+      white-space: pre-line;
+    }
+  </style>
+
+  <script>
+    async function runCrawler(crawlerType) {
+      const option = document.getElementById(`${crawlerType}-option`).value;
+      const pagesElement = document.getElementById(`${crawlerType}-pages`);
+      const pages = pagesElement ? pagesElement.value : 5;
+
+      try {
+        const response = await fetch('/run_crawler', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ crawler_type: crawlerType, option, pages })
+        });
+
+        const result = await response.json();
+
+        if (Array.isArray(result)) {
+          document.getElementById(`${crawlerType}-output`).innerHTML = result.join('\n');
+        } else {
+          document.getElementById(`${crawlerType}-output`).innerHTML = JSON.stringify(result);
         }
-    </script>
+      } catch (error) {
+        document.getElementById(`${crawlerType}-output`).innerHTML = "Error: " + error;
+      }
+    }
+  </script>
 </head>
 <body>
-    <h1>pythonCrawler</h1>
-    <div>
-        <h2>Sina News Fetcher</h2>
-        <select id="sina-option">
-            <option value="realtime">实时新闻</option>
-            <option value="trending">热门新闻</option>
-        </select>
-        <input type="number" id="sina-pages" placeholder="页数 (默认5)">
-        <button onclick="runCrawler('sina')">运行新浪新闻爬虫</button>
-        <div id="sina-output"></div>
+  <header>
+    <h1>pythonCrawler - Demo</h1>
+  </header>
+
+  <div class="container">
+    <!-- 新浪新闻爬虫部分 -->
+    <div class="section">
+      <h2>Sina News Fetcher</h2>
+      <p>可选择获取实时新闻或热门新闻，可按需指定页数。</p>
+      <select id="sina-option">
+        <option value="realtime">实时新闻</option>
+        <option value="trending">热门新闻</option>
+      </select>
+      <br>
+      <input type="number" id="sina-pages" placeholder="页数 (默认5)" />
+      <br>
+      <button onclick="runCrawler('sina')">运行新浪新闻爬虫</button>
+      <div id="sina-output" class="output-area"></div>
     </div>
-    <div>
-        <h2>GitHub Trending Fetcher</h2>
-        <select id="github-option">
-            <option value="weekly">每周</option>
-            <option value="monthly">每月</option>
-            <option value="yearly">全年</option>
-        </select>
-        <button onclick="runCrawler('github')">运行GitHub热门项目爬虫</button>
-        <div id="github-output"></div>
+
+    <!-- GitHub 热门项目爬虫部分 -->
+    <div class="section">
+      <h2>GitHub Trending Fetcher</h2>
+      <p>选择时间范围，以获取 GitHub 上热门项目。</p>
+      <select id="github-option">
+        <option value="weekly">每周</option>
+        <option value="monthly">每月</option>
+        <option value="yearly">全年</option>
+      </select>
+      <br>
+      <button onclick="runCrawler('github')">运行GitHub热门项目爬虫</button>
+      <div id="github-output" class="output-area"></div>
     </div>
-    <div>
-        <h2>Bilibili Covers Fetcher</h2>
-        <select id="bilibili-option">
-            <option value="history">入站必刷视频</option>
-            <option value="weekly">每周必看视频</option>
-        </select>
-        <button onclick="runCrawler('bilibili')">运行Bilibili封面爬虫</button>
-        <div id="bilibili-output"></div>
+
+    <!-- Bilibili 视频封面爬虫部分 -->
+    <div class="section">
+      <h2>Bilibili Covers Fetcher</h2>
+      <p>选择获取“历史热门”或“每周必看”视频封面。</p>
+      <select id="bilibili-option">
+        <option value="history">入站必刷视频</option>
+        <option value="weekly">每周必看视频</option>
+      </select>
+      <br>
+      <button onclick="runCrawler('bilibili')">运行Bilibili封面爬虫</button>
+      <div id="bilibili-output" class="output-area"></div>
     </div>
+  </div>
 </body>
 </html>

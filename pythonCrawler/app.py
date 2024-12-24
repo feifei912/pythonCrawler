@@ -1,6 +1,5 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 import os
-import threading
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from sina_news_fetcher import SinaNewsFetcher
@@ -8,7 +7,6 @@ from github_trending_fetcher import GitHubTrendingFetcher, TRENDING_URLS
 from bilibili_covers_fetcher import BilibiliCoversFetcher
 
 app = Flask(__name__, template_folder='templates')
-
 
 def run_sina_news_fetcher(option, pages=5):
     chrome_options = Options()
@@ -28,11 +26,9 @@ def run_sina_news_fetcher(option, pages=5):
         return sina_fetcher.fetch_trending_news()
     driver.quit()
 
-
 def run_github_trending_fetcher(time_range):
     github_fetcher = GitHubTrendingFetcher()
     return github_fetcher.get_github_trending(TRENDING_URLS[time_range])
-
 
 def run_bilibili_covers_fetcher(video_type):
     chrome_options = Options()
@@ -47,7 +43,6 @@ def run_bilibili_covers_fetcher(video_type):
     elif video_type == 'weekly':
         return bilibili_fetcher.download_bilibili_covers("https://www.bilibili.com/v/popular/weekly")
     driver.quit()
-
 
 @app.route('/run_crawler', methods=['POST'])
 def run_crawler():
@@ -66,6 +61,15 @@ def run_crawler():
         return jsonify({'error': 'Invalid crawler type'})
 
     return jsonify(result)
+
+# 提供 favicon 路由，避免 404 错误
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(
+        os.path.join(app.root_path, 'static'),
+        'favicon.ico',
+        mimetype='image/vnd.microsoft.icon'
+    )
 
 @app.route('/')
 def index():
