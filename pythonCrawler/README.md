@@ -7,7 +7,7 @@
 
 #### 安装教程
 
-1.  安装必要库pip install pathlib ruamel-yaml requests beautifulsoup4 matplotlib pillow  
+1.  安装必要库pip install pathlib ruamel-yaml requests beautifulsoup4 matplotlib pillow flask   
 pip install selenium==4.5.0 
 3.  安装chromedriver，配置环境变量
 ___
