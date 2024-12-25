@@ -32,37 +32,53 @@ class SinaNewsFetcher:
                 for page in range(1, max_pages + 1):
                     url = f"https://news.sina.com.cn/roll/#pageid=153&lid=2509&k=&num=50&page={page}"
                     all_news.append(f"正在抓取第 {page} 页: {url}")
-                    self.driver.get(url)
-                    self.driver.refresh()
 
-                    try:
-                        # 等待页面加载完成
-                        WebDriverWait(self.driver, 10).until(
-                            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "#d_list ul li"))
-                        )
+                    # 增加重试机制
+                    retries = 3
+                    while retries > 0:
+                        try:
+                            self.driver.get(url)
+                            # 增加初始等待时间
+                            time.sleep(5)
+                            self.driver.refresh()
 
-                        news_items = self.driver.find_elements(By.CSS_SELECTOR, "#d_list ul li")
+                            # 使用更长的超时时间
+                            WebDriverWait(self.driver, 20).until(
+                                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "#d_list ul li"))
+                            )
 
-                        for item in news_items:
-                            try:
-                                # 获取新闻标题、链接和时间
-                                title_element = item.find_element(By.CSS_SELECTOR, ".c_tit a")
-                                title = title_element.text.strip()
-                                link = title_element.get_attribute("href")
-                                time_text = item.find_element(By.CSS_SELECTOR, ".c_time").text.strip()
+                            news_items = self.driver.find_elements(By.CSS_SELECTOR, "#d_list ul li")
+                            if news_items:
+                                break
+                            retries -= 1
+                        except Exception as e:
+                            print(f"尝试加载页面失败，剩余重试次数：{retries}")
+                            retries -= 1
+                            if retries == 0:
+                                raise e
+                            time.sleep(3)
 
-                                if title and link:
-                                    news_str = f"实时新闻 - 标题: {title}\n时间: {time_text}\n链接: {link}\n"
-                                    writer.writerow([title, link, time_text])
-                                    all_news.append(news_str)
-                            except Exception as e:
-                                all_news.append(f"解析实时新闻条目失败: {e}")
-                                continue
+                    for item in news_items:
+                        try:
+                            # 对每个元素使用显式等待
+                            title_element = WebDriverWait(item, 10).until(
+                                EC.presence_of_element_located((By.CSS_SELECTOR, ".c_tit a"))
+                            )
+                            title = title_element.text.strip()
+                            link = title_element.get_attribute("href")
+                            time_text = item.find_element(By.CSS_SELECTOR, ".c_time").text.strip()
 
-                        # 随机等待一段时间以避免被反爬虫机制检测
-                        time.sleep(random.uniform(2, 5))
-                    except Exception as e:
-                        all_news.append(f"抓取第 {page} 页失败: {e}")
+                            if title and link:
+                                news_str = f"实时新闻 - 标题: {title}\n时间: {time_text}\n链接: {link}\n"
+                                writer.writerow([title, link, time_text])
+                                all_news.append(news_str)
+                                print(news_str)  # 添加实时输出
+                        except Exception as e:
+                            all_news.append(f"解析实时新闻条目失败: {e}")
+                            continue
+
+                    # 增加页面间隔时间
+                    time.sleep(random.uniform(3, 6))
 
                 all_news.append(f"\n实时新闻抓取完成，结果已保存至 {realtime_csv_path}")
                 return all_news

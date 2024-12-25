@@ -15,15 +15,32 @@ def setup_chrome_driver():
 
 def fetch_sina_news(driver, parent_directory, choice):
     """根据用户选择抓取新浪新闻。"""
-    folder_name = os.path.join(parent_directory, 'News')
-    os.makedirs(folder_name, exist_ok=True)
-    sina_fetcher = SinaNewsFetcher(driver, folder_name)
+    try:
+        folder_name = os.path.join(parent_directory, 'News')
+        os.makedirs(folder_name, exist_ok=True)
+        sina_fetcher = SinaNewsFetcher(driver, folder_name)
 
-    if choice == '1':
-        pages = int(input("请输入要抓取的实时新闻页数（默认5页）：") or 5)
-        sina_fetcher.fetch_realtime_news(max_pages=pages)
-    elif choice == '2':
-        sina_fetcher.fetch_trending_news()
+        if choice == '1':
+            pages = int(input("请输入要抓取的实时新闻页数（默认5页）：") or 5)
+            print("开始抓取实时新闻，请稍候...")
+            results = sina_fetcher.fetch_realtime_news(max_pages=pages)
+            if results:
+                print("\n抓取结果：")
+                for result in results:
+                    print(result)
+            else:
+                print("未获取到新闻数据")
+        elif choice == '2':
+            print("开始抓取热门新闻，请稍候...")
+            results = sina_fetcher.fetch_trending_news()
+            if results:
+                print("\n抓取结果：")
+                for result in results:
+                    print(result)
+            else:
+                print("未获取到新闻数据")
+    except Exception as e:
+        print(f"抓取新闻时发生错误: {e}")
 
 def fetch_github_trending(github_fetcher):
     """根据用户选择抓取 GitHub 热门项目。"""
