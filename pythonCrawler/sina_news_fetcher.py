@@ -13,6 +13,13 @@ class SinaNewsFetcher:
         self.folder_name = folder_name
 
     def fetch_realtime_news(self, max_pages=5):
+        # 确保 max_pages 是整数
+        try:
+            max_pages = int(max_pages)
+        except (TypeError, ValueError):
+            print("错误：页数必须是有效的整数")
+            return []
+
         # 设置保存实时新闻的 CSV 文件路径
         realtime_csv_path = os.path.join(self.folder_name, "sina_realTimeNews.csv")
         with open(realtime_csv_path, mode="w", encoding="utf-8-sig", newline="") as file:
@@ -24,42 +31,45 @@ class SinaNewsFetcher:
             try:
                 for page in range(1, max_pages + 1):
                     url = f"https://news.sina.com.cn/roll/#pageid=153&lid=2509&k=&num=50&page={page}"
-                    print(f"抓取第 {page} 页: {url}")
+                    all_news.append(f"正在抓取第 {page} 页: {url}")
                     self.driver.get(url)
                     self.driver.refresh()
 
-                    # 等待页面加载完成
-                    WebDriverWait(self.driver, 10).until(
-                        EC.presence_of_all_elements_located((By.CSS_SELECTOR, "#d_list ul li"))
-                    )
+                    try:
+                        # 等待页面加载完成
+                        WebDriverWait(self.driver, 10).until(
+                            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "#d_list ul li"))
+                        )
 
-                    news_items = self.driver.find_elements(By.CSS_SELECTOR, "#d_list ul li")
+                        news_items = self.driver.find_elements(By.CSS_SELECTOR, "#d_list ul li")
 
-                    for item in news_items:
-                        try:
-                            # 获取新闻标题、链接和时间
-                            title_element = item.find_element(By.CSS_SELECTOR, ".c_tit a")
-                            title = title_element.text.strip()
-                            link = title_element.get_attribute("href")
-                            time_text = item.find_element(By.CSS_SELECTOR, ".c_time").text.strip()
+                        for item in news_items:
+                            try:
+                                # 获取新闻标题、链接和时间
+                                title_element = item.find_element(By.CSS_SELECTOR, ".c_tit a")
+                                title = title_element.text.strip()
+                                link = title_element.get_attribute("href")
+                                time_text = item.find_element(By.CSS_SELECTOR, ".c_time").text.strip()
 
-                            if title and link:
-                                news_str = f"实时新闻 - 标题: {title}, 时间: {time_text}, 链接: {link}"
-                                print(news_str)
-                                writer.writerow([title, link, time_text])
-                                all_news.append(news_str)
-                        except Exception as e:
-                            print(f"解析实时新闻条目失败: {e}")
-                            continue
+                                if title and link:
+                                    news_str = f"实时新闻 - 标题: {title}\n时间: {time_text}\n链接: {link}\n"
+                                    writer.writerow([title, link, time_text])
+                                    all_news.append(news_str)
+                            except Exception as e:
+                                all_news.append(f"解析实时新闻条目失败: {e}")
+                                continue
 
-                    # 随机等待一段时间以避免被反爬虫机制检测
-                    time.sleep(random.uniform(2, 5))
+                        # 随机等待一段时间以避免被反爬虫机制检测
+                        time.sleep(random.uniform(2, 5))
+                    except Exception as e:
+                        all_news.append(f"抓取第 {page} 页失败: {e}")
 
-                print(f"\n实时新闻抓取完成，结果已保存至 {realtime_csv_path}")
+                all_news.append(f"\n实时新闻抓取完成，结果已保存至 {realtime_csv_path}")
                 return all_news
             except Exception as e:
-                print("抓取实时新闻失败:", e)
-                return []
+                error_msg = f"抓取实时新闻失败: {e}"
+                print(error_msg)
+                return [error_msg]
 
     def fetch_trending_news(self):
         # 设置保存热门新闻的 CSV 文件路径
@@ -102,7 +112,7 @@ class SinaNewsFetcher:
                                 url = title_element.get_attribute("href")
 
                                 if title and url:
-                                    news_str = f"热门新闻 - 类别: {category_name}, 标题: {title}, 链接: {url}"
+                                    news_str = f"热门新闻 - 类别: {category_name}, \n标题: {title}, \n链接: {url}"
                                     print(news_str)
                                     writer.writerow([category_name, title, url])
                                     all_news.append(news_str)
