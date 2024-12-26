@@ -8,21 +8,21 @@
   <title>pythonCrawler</title>
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon"/>
 
-  <!-- 基础样式 -->
+  <!-- 引入 Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     @media (forced-colors: active) {
       body {
         forced-color-adjust: none;
       }
     }
-
     body {
       margin: 0;
       padding: 0;
       font-family: "Microsoft YaHei", Arial, sans-serif;
       background: #f0f2f5;
     }
-
     header {
       background-color: #0073e6;
       color: #fff;
@@ -30,17 +30,8 @@
       text-align: center;
       margin-bottom: 2em;
     }
-
-    h1 {
-      margin: 0;
-    }
-
-    .container {
-      width: 90%;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
+    h1 { margin: 0; }
+    .container { width: 90%; max-width: 1200px; margin: 0 auto; }
     .controls-container {
       display: flex;
       justify-content: space-between;
@@ -48,7 +39,6 @@
       margin-bottom: 2em;
       flex-wrap: wrap;
     }
-
     .control-group {
       flex: 1;
       min-width: 300px;
@@ -57,21 +47,18 @@
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-
     .control-group h2 {
       margin-top: 0;
       margin-bottom: 1em;
       font-size: 1.2em;
       color: #333;
     }
-
     .control-inputs {
       display: flex;
       gap: 10px;
       align-items: center;
       flex-wrap: wrap;
     }
-
     select, input[type="number"] {
       padding: 0.6em;
       border: 1px solid #ccc;
@@ -79,7 +66,6 @@
       flex: 1;
       min-width: 100px;
     }
-
     button {
       background-color: #0073e6;
       color: #fff;
@@ -90,36 +76,31 @@
       white-space: nowrap;
       transition: background-color 0.3s;
     }
-
     button:hover {
       background-color: #005bb5;
     }
-
     .output-section {
       background: #fff;
       padding: 2em;
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-
     .output-area {
-        margin-top: 1em;
-        padding: 1.5em;
-        border: 1px solid #eee;
-        border-radius: 4px;
-        background-color: #f9f9f9;
-        font-family: "Microsoft YaHei Mono", Consolas, monospace;
-        white-space: pre-wrap;
-        word-break: break-all;
-        min-height: 400px;
-        max-height: 600px;
-        overflow-y: auto;
-        font-size: 14px;
-        line-height: 1.6;
-        padding: 20px;
-        color: #333;
+      margin-top: 1em;
+      padding: 1.5em;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      font-family: "Microsoft YaHei Mono", Consolas, monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+      min-height: 400px;
+      max-height: 600px;
+      overflow-y: auto;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #333;
     }
-
     .tab-buttons {
       margin-bottom: 1em;
       display: flex;
@@ -127,7 +108,6 @@
       flex-wrap: wrap;
       justify-content: center;
     }
-
     .tab-button {
       padding: 0.5em 1em;
       background-color: #f0f0f0;
@@ -136,18 +116,15 @@
       cursor: pointer;
       transition: all 0.3s;
     }
-
     .tab-button.active {
       background-color: #0073e6;
       color: white;
     }
-
     /* 响应式设计 */
     @media (max-width: 768px) {
       .control-group {
         min-width: 100%;
       }
-
       .controls-container {
         flex-direction: column;
       }
@@ -156,58 +133,135 @@
 
   <script>
     async function runCrawler(crawlerType) {
-        const option = document.getElementById(`${crawlerType}-option`).value;
-        const pagesElement = document.getElementById(`${crawlerType}-pages`);
-        const pages = pagesElement ? pagesElement.value : 5;
-        const outputContent = document.getElementById('output-content');
+      const option = document.getElementById(`${crawlerType}-option`).value;
+      const pagesElement = document.getElementById(`${crawlerType}-pages`);
+      const pages = pagesElement ? pagesElement.value : 5;
+      const outputContent = document.getElementById('output-content');
 
-        // 设置对应的标签为活跃状态
-        setActiveTab(crawlerType);
+      setActiveTab(crawlerType);
+      outputContent.innerHTML = `开始爬取${getCrawlerTypeName(crawlerType)}数据...\n`;
 
-        // 清空并显示开始信息
-        outputContent.innerHTML = `开始爬取${getCrawlerTypeName(crawlerType)}数据...\n`;
+      try {
+        const response = await fetch('/run_crawler', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ crawler_type: crawlerType, option, pages })
+        });
+        const result = await response.json();
 
-        try {
-            const response = await fetch('/run_crawler', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ crawler_type: crawlerType, option, pages })
-            });
+        outputContent.innerHTML = "";
 
-            const result = await response.json();
-
-            // 清空开始信息
-            outputContent.innerHTML = "";
-
-            // 显示结果
-            if (Array.isArray(result)) {
-                result.forEach(item => {
-                    outputContent.innerHTML += item + "\n";
-                    // 自动滚动到底部
-                    outputContent.scrollTop = outputContent.scrollHeight;
-                });
-            } else {
-                outputContent.innerHTML = JSON.stringify(result, null, 2);
-            }
-        } catch (error) {
-            outputContent.innerHTML = "错误: " + error;
+        // 如果是 Bilibili 数据并且是数组，就进行输出和可视化
+        if (crawlerType === 'bilibili' && Array.isArray(result)) {
+          // 在文字区域打印每个视频简要信息
+          result.forEach(item => {
+            outputContent.innerHTML += `视频标题：${item.title} - UP名称：${item.up_name} - 播放量：${item.play_count}\n`;
+          });
+          // 绘制 Chart.js 图表
+          drawBilibiliChart(result);
+        } else if (Array.isArray(result)) {
+          // 其余新浪、GitHub 数组输出
+          result.forEach(item => {
+            outputContent.innerHTML += item + "\n";
+          });
+        } else {
+          // 普通对象或错误提示
+          outputContent.innerHTML = JSON.stringify(result, null, 2);
         }
+      } catch (error) {
+        outputContent.innerHTML = "错误: " + error;
+      }
     }
 
+    // 绘制 Bilibili 播放量柱状图
+    // index.html 中的 drawBilibiliChart 函数修改
+
+    function drawBilibiliChart(videoData) {
+        // 如果已经有 canvas，先清理
+        const existingCanvas = document.getElementById('bilibiliChart');
+        if (existingCanvas) {
+            existingCanvas.remove();
+        }
+
+        // 创建一个新的 canvas 用于图表
+        const chartCanvas = document.createElement('canvas');
+        chartCanvas.id = 'bilibiliChart';
+        document.querySelector('.output-section').appendChild(chartCanvas);
+
+        // 准备数据 (X轴标签与播放量)
+        const labels = [];
+        const counts = [];
+
+        videoData.forEach(item => {
+            labels.push(item.title);
+            // 解析播放量（处理带单位的数字）
+            let count = 0;
+            const playCount = item.play_count;
+            if (playCount.includes('亿')) {
+                count = parseFloat(playCount.replace('亿', '')) * 100000000;
+            } else if (playCount.includes('万')) {
+                count = parseFloat(playCount.replace('万', '')) * 10000;
+            } else {
+                count = parseInt(playCount.replace(/\D/g, ''), 10) || 0;
+            }
+            counts.push(count);
+        });
+
+        new Chart(chartCanvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '播放量',
+                    data: counts,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            // 自定义 y 轴刻度格式化
+                            callback: function(value) {
+                                if (value >= 100000000) {
+                                    return (value / 100000000).toFixed(1) + '亿';
+                                }
+                                if (value >= 10000) {
+                                    return (value / 10000).toFixed(0) + '万';
+                                }
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
     function setActiveTab(crawlerType) {
-        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-        document.querySelector(`[data-crawler="${crawlerType}"]`).classList.add('active');
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`[data-crawler="${crawlerType}"]`).classList.add('active');
     }
 
     function getCrawlerTypeName(crawlerType) {
-        const types = {
-            'sina': '新浪新闻',
-            'github': 'GitHub热门项目',
-            'bilibili': 'Bilibili视频'
-        };
-        return types[crawlerType] || crawlerType;
+      const types = {
+        'sina': '新浪新闻',
+        'github': 'GitHub热门项目',
+        'bilibili': 'Bilibili视频'
+      };
+      return types[crawlerType] || crawlerType;
     }
   </script>
 </head>
@@ -244,7 +298,7 @@
         </div>
       </div>
 
-      <!-- Bilibili 视频封面爬虫控制组 -->
+      <!-- Bilibili 视频爬虫控制组 -->
       <div class="control-group">
         <h2>Bilibili 热播视频封面爬虫</h2>
         <div class="control-inputs">
@@ -257,7 +311,7 @@
       </div>
     </div>
 
-    <!-- 统一的输出区域 -->
+    <!-- 统一输出区域 -->
     <div class="output-section">
       <div class="tab-buttons">
         <button class="tab-button active" data-crawler="sina">新浪新闻</button>

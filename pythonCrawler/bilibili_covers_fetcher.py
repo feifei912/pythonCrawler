@@ -51,7 +51,7 @@ class BilibiliCoversFetcher:
                 up_name_element = video.find_element(By.CSS_SELECTOR, '.up-name__text')
                 up_name = up_name_element.get_attribute('title')
 
-                # 新增：获取播放量
+                # 获取播放量
                 play_count_element = video.find_element(By.CSS_SELECTOR, '.play-text')
                 play_count = play_count_element.text.strip()
 
@@ -60,11 +60,17 @@ class BilibiliCoversFetcher:
                 cover_url = self.clean_image_url(cover_url)
 
                 safe_title = self.sanitize_filename(title)
-                video_str = f"视频标题：{title} - UP名称：{up_name} - 播放量：{play_count}"
-                print(video_str)
-                all_videos.append(video_str)
 
-                # 下载封面图片
+                # 这里改为存储字典数据，便于后续可视化
+                single_video_data = {
+                    'title': title,
+                    'up_name': up_name,
+                    'play_count': play_count
+                }
+                print(f"视频标题：{title} - UP名称：{up_name} - 播放量：{play_count}")
+                all_videos.append(single_video_data)
+
+                # 下载封面图片 (如需)
                 response = requests.get(cover_url, stream=True)
                 if response.status_code == 200:
                     image = Image.open(BytesIO(response.content))

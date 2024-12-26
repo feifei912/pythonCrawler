@@ -1,9 +1,16 @@
 import os
+import re
+import matplotlib
+import matplotlib.pyplot as plt
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from sina_news_fetcher import SinaNewsFetcher
 from github_trending_fetcher import GitHubTrendingFetcher, TRENDING_URLS
 from bilibili_covers_fetcher import BilibiliCoversFetcher
+
+matplotlib.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei']
+# 用来正常显示负号
+matplotlib.rcParams['axes.unicode_minus'] = False
 
 def setup_chrome_driver():
     """设置 Chrome WebDriver 选项。"""
@@ -12,6 +19,78 @@ def setup_chrome_driver():
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
     return webdriver.Chrome(options=chrome_options)
+
+
+def clean_title(title):
+    """清理标题中的特殊字符"""
+    # 移除表情符号和特殊字符
+    cleaned = re.sub(r'[\U00010000-\U0010ffff]', '', title)
+    cleaned = re.sub(r'[^\u4e00-\u9fff\u3000-\u303f\x00-\xff]', '', cleaned)
+    # 如果标题太长，截取前20个字符
+    if len(cleaned) > 20:
+        cleaned = cleaned[:20] + '...'
+    return cleaned
+
+
+def format_number(num):
+    """格式化数字显示"""
+    if num >= 100000000:  # 亿
+        return f'{num / 100000000:.1f}亿'
+    elif num >= 10000:  # 万
+        return f'{num / 10000:.0f}万'
+    return f'{num:.0f}'
+
+
+def visualize_bilibili_play_counts(video_data):
+    """使用 Matplotlib 绘制播放量柱状图"""
+    titles = []
+    counts = []
+
+    for item in video_data:
+        # 清理并缩短标题
+        titles.append(clean_title(item['title']))
+
+        # 处理播放量
+        play_count = item['play_count']
+        if '亿' in play_count:
+            count = float(play_count.replace('亿', '')) * 100000000
+        elif '万' in play_count:
+            count = float(play_count.replace('万', '')) * 10000
+        else:
+            count = float(''.join(filter(str.isdigit, play_count)))
+        counts.append(count)
+
+    if not counts:
+        print("没有可视化的数据。")
+        return
+
+    plt.figure(figsize=(15, 8))
+    bars = plt.bar(range(len(counts)), counts, color='#3399ff', alpha=0.7)
+
+    # 设置x轴标签
+    plt.xticks(range(len(titles)), titles, rotation=45, ha='right', fontsize=8)
+
+    # 设置标题和轴标签
+    plt.xlabel('视频标题', fontsize=10)
+    plt.ylabel('播放量', fontsize=10)
+    plt.title('Bilibili 视频播放量统计', fontsize=12)
+
+    # 为每个柱子添加数值标签
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width() / 2., height,
+                 format_number(height),
+                 ha='center', va='bottom', rotation=0)
+
+    # 格式化y轴刻度
+    def format_func(x, p):
+        return format_number(x)
+
+    plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(format_func))
+
+    # 调整布局
+    plt.tight_layout()
+    plt.show()
 
 def fetch_sina_news(driver, parent_directory, choice):
     """根据用户选择抓取新浪新闻。"""
@@ -61,18 +140,28 @@ def fetch_github_trending(github_fetcher):
 def fetch_bilibili_covers(driver):
     """根据用户选择抓取 Bilibili 封面。"""
     bilibili_fetcher = BilibiliCoversFetcher(driver, 'BilibiliCovers')
-    print("请输入爬取页面的选项（1 - 入站必刷视频，2 - 每周必看视频，3 - 入站必刷视频以及每周必看视频）：")
+    print("请输入爬取页面的选项（1 - 入站必刷视频，2 - 每周必看视频，3 - 两种都获取）：")
     sub_choice = input().strip()
 
+    video_data = []
     if sub_choice == '1':
-        bilibili_fetcher.download_bilibili_covers("https://www.bilibili.com/v/popular/history")
+        video_data = bilibili_fetcher.download_bilibili_covers("https://www.bilibili.com/v/popular/history")
     elif sub_choice == '2':
-        bilibili_fetcher.download_bilibili_covers("https://www.bilibili.com/v/popular/weekly")
+        video_data = bilibili_fetcher.download_bilibili_covers("https://www.bilibili.com/v/popular/weekly")
     elif sub_choice == '3':
-        bilibili_fetcher.download_bilibili_covers("https://www.bilibili.com/v/popular/history")
-        bilibili_fetcher.download_bilibili_covers("https://www.bilibili.com/v/popular/weekly")
+        data1 = bilibili_fetcher.download_bilibili_covers("https://www.bilibili.com/v/popular/history")
+        data2 = bilibili_fetcher.download_bilibili_covers("https://www.bilibili.com/v/popular/weekly")
+        video_data = data1 + data2
     else:
         print("无效选项，程序结束。")
+        return
+
+    # 将下载到的视频信息打印
+    for idx, item in enumerate(video_data):
+        print(f"{idx+1}. {item['title']} | UP主：{item['up_name']} | 播放量：{item['play_count']}")
+
+    # 通过 Matplotlib 可视化
+    visualize_bilibili_play_counts(video_data)
 
 def main():
     driver = setup_chrome_driver()
@@ -86,7 +175,7 @@ def main():
             print("1. 新浪实时新闻")
             print("2. 新浪热门排行新闻")
             print("3. GitHub 热门项目")
-            print("4. Bilibili 热播视频封面")
+            print("4. Bilibili 热播视频封面（可视化）")
             print("0. 退出")
 
             choice = input("请输入数字选择：").strip()

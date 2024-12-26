@@ -21,10 +21,13 @@ def run_sina_news_fetcher(option, pages=5):
 
     sina_fetcher = SinaNewsFetcher(driver, folder_name)
     if option == 'realtime':
-        return sina_fetcher.fetch_realtime_news(max_pages=pages)
+        result = sina_fetcher.fetch_realtime_news(max_pages=pages)
     elif option == 'trending':
-        return sina_fetcher.fetch_trending_news()
+        result = sina_fetcher.fetch_trending_news()
+    else:
+        result = []
     driver.quit()
+    return result
 
 def run_github_trending_fetcher(time_range):
     github_fetcher = GitHubTrendingFetcher()
@@ -38,11 +41,16 @@ def run_bilibili_covers_fetcher(video_type):
     driver = webdriver.Chrome(options=chrome_options)
 
     bilibili_fetcher = BilibiliCoversFetcher(driver, 'BilibiliCovers')
+
     if video_type == 'history':
-        return bilibili_fetcher.download_bilibili_covers("https://www.bilibili.com/v/popular/history")
+        video_data = bilibili_fetcher.download_bilibili_covers("https://www.bilibili.com/v/popular/history")
     elif video_type == 'weekly':
-        return bilibili_fetcher.download_bilibili_covers("https://www.bilibili.com/v/popular/weekly")
+        video_data = bilibili_fetcher.download_bilibili_covers("https://www.bilibili.com/v/popular/weekly")
+    else:
+        video_data = []
+
     driver.quit()
+    return video_data
 
 @app.route('/run_crawler', methods=['POST'])
 def run_crawler():
@@ -65,11 +73,7 @@ def run_crawler():
 # 提供 favicon 路由，避免 404 错误
 @app.route('/favicon.ico')
 def favicon():
-    return send_from_directory(
-        os.path.join(app.root_path, 'static'),
-        'favicon.ico',
-        mimetype='image/vnd.microsoft.icon'
-    )
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 @app.route('/')
 def index():
