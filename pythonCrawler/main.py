@@ -45,16 +45,16 @@ def fetch_sina_news(driver, parent_directory, choice):
 def fetch_github_trending(github_fetcher):
     """根据用户选择抓取 GitHub 热门项目。"""
     print("请选择爬取的时间范围：")
-    print("1. 周热门")
-    print("2. 月热门")
-    print("3. 全年热门")
+    print("1. 今日热门")
+    print("2. 周热门")
+    print("3. 月热门")
     sub_choice = input("请输入选项（1/2/3）：").strip()
     if sub_choice == "1":
-        github_fetcher.get_github_trending(TRENDING_URLS["weekly"])
-    elif sub_choice == "2":
-        github_fetcher.get_github_trending(TRENDING_URLS["monthly"])
-    elif sub_choice == "3":
         github_fetcher.get_github_trending(TRENDING_URLS["yearly"])
+    elif sub_choice == "2":
+        github_fetcher.get_github_trending(TRENDING_URLS["weekly"])
+    elif sub_choice == "3":
+        github_fetcher.get_github_trending(TRENDING_URLS["monthly"])
     else:
         print("输入无效，请输入 1、2 或 3。")
 
