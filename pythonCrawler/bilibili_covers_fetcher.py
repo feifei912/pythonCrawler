@@ -1,9 +1,5 @@
-# b i l i b i l i_covers_fetcher.py
-
 import os
 import time
-import random
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 import requests
 from PIL import Image
