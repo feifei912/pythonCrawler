@@ -12,9 +12,9 @@ USER_AGENTS = [
 ]
 
 TRENDING_URLS = {
+    "daily": "https://github.com/trending",
     "weekly": "https://github.com/trending?since=weekly",
-    "monthly": "https://github.com/trending?since=monthly",
-    "yearly": "https://github.com/trending"
+    "monthly": "https://github.com/trending?since=monthly"
 }
 
 class GitHubTrendingFetcher:

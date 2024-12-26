@@ -50,7 +50,7 @@ def fetch_github_trending(github_fetcher):
     print("3. 月热门")
     sub_choice = input("请输入选项（1/2/3）：").strip()
     if sub_choice == "1":
-        github_fetcher.get_github_trending(TRENDING_URLS["yearly"])
+        github_fetcher.get_github_trending(TRENDING_URLS["daily"])
     elif sub_choice == "2":
         github_fetcher.get_github_trending(TRENDING_URLS["weekly"])
     elif sub_choice == "3":
