@@ -1,3 +1,5 @@
+# b i l i b i l i_covers_fetcher.py
+
 import os
 import time
 import random
@@ -14,7 +16,6 @@ class BilibiliCoversFetcher:
 
     @staticmethod
     def sanitize_filename(filename):
-        # 清理文件名中的无效字符
         invalid_chars = '<>:"/\\|?*'
         for char in invalid_chars:
             filename = filename.replace(char, '')
@@ -22,7 +23,6 @@ class BilibiliCoversFetcher:
 
     @staticmethod
     def clean_image_url(url):
-        # 清理图片 URL
         if url.startswith("//"):
             url = "https:" + url
         if '@' in url:
@@ -34,31 +34,37 @@ class BilibiliCoversFetcher:
         self.driver.get(url)
         time.sleep(5)
 
-        # 尝试获取日期信息
+        # 提取日期信息
         try:
             date_info_element = self.driver.find_element(By.CSS_SELECTOR, '.date-info .current-tiem')
             date_info = date_info_element.text.strip()
         except:
             date_info = '未知日期'
 
-        # 根据 URL 判断更新信息
-        update_info = f'每周必看视频 --{date_info}' if 'weekly' in url else f'入站必刷视频'
+        update_info = f'每周必看视频 --{date_info}' if 'weekly' in url else '入站必刷视频'
         print(f"\nBilibili {update_info}：\n")
 
-        # 获取所有视频元素
         videos = self.driver.find_elements(By.CSS_SELECTOR, '.video-card')
         all_videos = []
 
         for video in videos[:30]:
             try:
-                # 获取视频标题、UP 名称和封面图片 URL
-                title = video.find_element(By.CSS_SELECTOR, '.video-name').get_attribute('title')
-                up_name = video.find_element(By.CSS_SELECTOR, '.up-name__text').get_attribute('title')
-                cover_url = video.find_element(By.CSS_SELECTOR, '.cover-picture__image').get_attribute('data-src') or video.find_element(By.CSS_SELECTOR, '.cover-picture__image').get_attribute('src')
-                cover_url = self.clean_image_url(cover_url)
-                safe_title = self.sanitize_filename(title)
+                title_element = video.find_element(By.CSS_SELECTOR, '.video-name')
+                title = title_element.get_attribute('title')
 
-                video_str = f"视频标题：{title} - UP名称：{up_name}"
+                up_name_element = video.find_element(By.CSS_SELECTOR, '.up-name__text')
+                up_name = up_name_element.get_attribute('title')
+
+                # 新增：获取播放量
+                play_count_element = video.find_element(By.CSS_SELECTOR, '.play-text')
+                play_count = play_count_element.text.strip()
+
+                cover_url_element = video.find_element(By.CSS_SELECTOR, '.cover-picture__image')
+                cover_url = cover_url_element.get_attribute('data-src') or cover_url_element.get_attribute('src')
+                cover_url = self.clean_image_url(cover_url)
+
+                safe_title = self.sanitize_filename(title)
+                video_str = f"视频标题：{title} - UP名称：{up_name} - 播放量：{play_count}"
                 print(video_str)
                 all_videos.append(video_str)
 
@@ -69,7 +75,6 @@ class BilibiliCoversFetcher:
                     if image.mode == 'RGBA':
                         image = image.convert('RGB')
 
-                    # 将图片保存到父文件夹的 BilibiliCovers 文件夹中
                     parent_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                     save_path = os.path.join(parent_folder, 'BilibiliCovers')
                     os.makedirs(save_path, exist_ok=True)

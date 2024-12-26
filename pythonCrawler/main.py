@@ -86,7 +86,7 @@ def main():
             print("1. 新浪实时新闻")
             print("2. 新浪热门排行新闻")
             print("3. GitHub 热门项目")
-            print("4. Bilibili 视频封面")
+            print("4. Bilibili 热播视频封面")
             print("0. 退出")
 
             choice = input("请输入数字选择：").strip()
