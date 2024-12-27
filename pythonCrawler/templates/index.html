@@ -163,15 +163,17 @@
     const pages = pagesElement ? pagesElement.value : 5;
     const outputContent = document.getElementById('output-content');
 
-    // Show or hide the chart toggle based on the crawler type
+    // 获取图表切换按钮容器
     const chartToggle = document.querySelector('.chart-toggle');
+
+    // 根据爬虫类型控制图表切换按钮的显示/隐藏
     if (chartToggle) {
-      // Hide chart toggle for Sina
-      if (crawlerType === 'sina') {
-        chartToggle.style.display = 'none';
-      } else {
-        chartToggle.style.display = 'flex';
-      }
+      chartToggle.style.display = crawlerType === 'sina' ? 'none' : 'flex';
+    }
+
+    // 如果是新浪爬虫，移除现有的图表
+    if (crawlerType === 'sina') {
+      removeExistingChart();
     }
 
     setActiveTab(crawlerType);
@@ -190,20 +192,20 @@
       outputContent.innerHTML = "";
 
       if (crawlerType === 'sina' && Array.isArray(result)) {
-        // Convert "\n" to actual HTML line breaks
+        // 为新浪新闻数据添加换行符
         let newsOutput = "";
         result.forEach(item => {
           newsOutput += item.replace(/\n/g, "<br>") + "<br><br>";
         });
         outputContent.innerHTML = newsOutput;
       } else if (crawlerType === 'bilibili' && Array.isArray(result)) {
-        // Restore chart toggle for Bilibili and draw chart
+        // 显示 Bilibili 数据和图表
         result.forEach(item => {
           outputContent.innerHTML += `视频标题：${item.title} - UP名称：${item.up_name} - 播放量：${item.play_count}<br>`;
         });
         drawBilibiliChart(result);
       } else if (crawlerType === 'github' && Array.isArray(result)) {
-        // Restore chart toggle for GitHub and draw chart
+        // 显示 GitHub 数据和图表
         result.forEach(item => {
           outputContent.innerHTML += `项目名称：${item.项目名称} - 总星标数：${item.总星标数} - 新增星标数：${item.新增星标数}<br>`;
         });
