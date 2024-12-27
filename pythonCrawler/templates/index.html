@@ -156,6 +156,7 @@
 
 <script>
   let chart = null;
+  let currentProjectData = null;
 
   async function runCrawler(crawlerType) {
     const option = document.getElementById(`${crawlerType}-option`).value;
@@ -168,7 +169,7 @@
 
     // 根据爬虫类型控制图表切换按钮的显示/隐藏
     if (chartToggle) {
-      chartToggle.style.display = crawlerType === 'sina' ? 'none' : 'flex';
+      chartToggle.style.display = crawlerType === 'github' ? 'flex' : 'none';
     }
 
     // 如果是新浪爬虫，移除现有的图表
@@ -190,6 +191,7 @@
       const result = await response.json();
 
       outputContent.innerHTML = "";
+      currentProjectData = result; // Store the result for chart toggling
 
       if (crawlerType === 'sina' && Array.isArray(result)) {
         // 为新浪新闻数据添加换行符
@@ -209,7 +211,7 @@
         result.forEach(item => {
           outputContent.innerHTML += `项目名称：${item.项目名称} - 总星标数：${item.总星标数} - 新增星标数：${item.新增星标数}<br>`;
         });
-        drawGitHubChart(result);
+        drawGitHubChart(result, 'totalStars'); // Default to total stars
       } else {
         outputContent.innerHTML = JSON.stringify(result, null, 2);
       }
@@ -283,7 +285,7 @@
     });
   }
 
-  function drawGitHubChart(projectData) {
+  function drawGitHubChart(projectData, type = 'totalStars') {
     removeExistingChart();
 
     const chartCanvas = document.createElement('canvas');
@@ -291,26 +293,19 @@
     document.querySelector('.output-section').appendChild(chartCanvas);
 
     const labels = projectData.map(item => item.项目名称);
-    const totalStars = projectData.map(item => item.总星标数);
-    const recentStars = projectData.map(item => item.新增星标数);
+    const dataset = {
+      label: type === 'totalStars' ? '总星标数' : '新增星标数',
+      data: type === 'totalStars' ? projectData.map(item => item.总星标数) : projectData.map(item => item.新增星标数),
+      backgroundColor: type === 'totalStars' ? 'rgba(54, 162, 235, 0.6)' : 'rgba(255, 99, 132, 0.6)',
+      borderColor: type === 'totalStars' ? 'rgba(54, 162, 235, 1)' : 'rgba(255, 99, 132, 1)',
+      borderWidth: 1
+    };
 
     chart = new Chart(chartCanvas, {
         type: 'bar',
         data: {
             labels: labels,
-            datasets: [{
-                label: '总星标数',
-                data: totalStars,
-                backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }, {
-                label: '新增星标数',
-                data: recentStars,
-                backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1
-            }]
+            datasets: [dataset]
         },
         options: {
             responsive: true,
@@ -343,6 +338,10 @@
   function setActiveTab(crawlerType) {
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
     document.querySelector(`[data-crawler="${crawlerType}"]`).classList.add('active');
+
+    if (crawlerType === 'github') {
+      setGitHubChartToggleButtons('totalStars');
+    }
   }
 
   function getCrawlerTypeName(crawlerType) {
@@ -365,63 +364,21 @@
   }
 
   function toggleChart(type) {
+    setGitHubChartToggleButtons(type);
+
+    if (currentProjectData) {
+      drawGitHubChart(currentProjectData, type);
+    }
+  }
+
+  function setGitHubChartToggleButtons(type) {
     const buttons = document.querySelectorAll('.chart-toggle button');
     buttons.forEach(button => button.classList.remove('active'));
     document.querySelector(`.chart-toggle button[onclick="toggleChart('${type}')"]`).classList.add('active');
-
-    const outputContent = document.getElementById('output-content');
-    const projectData = JSON.parse(outputContent.innerHTML);
-
-    const labels = projectData.map(item => item.项目名称);
-    const totalStars = projectData.map(item => item.总星标数);
-    const recentStars = projectData.map(item => item.新增星标数);
-
-    removeExistingChart();
-
-    const chartCanvas = document.createElement('canvas');
-    chartCanvas.id = 'githubChart';
-    document.querySelector('.output-section').appendChild(chartCanvas);
-
-    chart = new Chart(chartCanvas, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: type === 'totalStars' ? '总星标数' : '新增星标数',
-                data: type === 'totalStars' ? totalStars : recentStars,
-                backgroundColor: type === 'totalStars' ? 'rgba(54, 162, 235, 0.6)' : 'rgba(255, 99, 132, 0.6)',
-                borderColor: type === 'totalStars' ? 'rgba(54, 162, 235, 1)' : 'rgba(255, 99, 132, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: {
-                    ticks: {
-                        autoSkip: false,
-                        maxRotation: 45,
-                        minRotation: 45
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return value;
-                        }
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
-        }
-    });
   }
 </script>
+
+
 </head>
 <body>
   <header>
@@ -477,7 +434,7 @@
         <button class="tab-button" data-crawler="bilibili">Bilibili 封面</button>
       </div>
       <div id="output-content" class="output-area">等待开始爬取数据...</div>
-      <div class="chart-toggle">
+      <div class="chart-toggle" style="display: none;">
         <button class="active" onclick="toggleChart('totalStars')">总星标数</button>
         <button onclick="toggleChart('recentStars')">新增星标数</button>
       </div>
