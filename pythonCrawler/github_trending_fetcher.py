@@ -70,7 +70,8 @@ class GitHubTrendingFetcher:
                 all_projects.append({
                     "项目名称": project_name,
                     "总星标数": total_stars,
-                    "新增星标数": stars_recently
+                    "新增星标数": stars_recently,
+                    "项目链接": link
                 })
 
             # 随机等待一段时间以避免被反爬虫机制检测

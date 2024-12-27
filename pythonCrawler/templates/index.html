@@ -206,13 +206,13 @@
           outputContent.innerHTML += `视频标题：${item.title} - UP名称：${item.up_name} - 播放量：${item.play_count}<br>`;
         });
         drawBilibiliChart(result);
-      } else if (crawlerType === 'github' && Array.isArray(result)) {
-        // 显示 GitHub 数据和图表
-        result.forEach(item => {
-          outputContent.innerHTML += `项目名称：${item.项目名称} - 总星标数：${item.总星标数} - 新增星标数：${item.新增星标数}<br>`;
-        });
-        drawGitHubChart(result, 'totalStars'); // Default to total stars
-      } else {
+      }else if (crawlerType === 'github' && Array.isArray(result)) {
+      // 显示 GitHub 数据和图表
+      result.forEach(item => {
+          outputContent.innerHTML += `项目名称：<a href="${item.项目链接}" target="_blank">${item.项目名称}</a> - 总星标数：${item.总星标数} - 新增星标数：${item.新增星标数}<br>`;
+      });
+      drawGitHubChart(result, 'totalStars'); // Default to total stars
+      }else {
         outputContent.innerHTML = JSON.stringify(result, null, 2);
       }
     } catch (error) {
