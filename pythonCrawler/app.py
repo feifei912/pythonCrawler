@@ -70,7 +70,6 @@ def run_crawler():
 
     return jsonify(result)
 
-# 提供 favicon 路由，避免 404 错误
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')

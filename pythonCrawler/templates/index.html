@@ -84,6 +84,7 @@
       padding: 2em;
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: relative;
     }
     .output-area {
       margin-top: 1em;
@@ -120,6 +121,28 @@
       background-color: #0073e6;
       color: white;
     }
+    .chart-toggle {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 5px;
+    }
+    .chart-toggle button {
+      padding: 0.3em 0.6em;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .chart-toggle button:hover {
+      background-color: #f0f0f0;
+    }
+    .chart-toggle button.active {
+      background-color: #0073e6;
+      color: white;
+    }
     /* 响应式设计 */
     @media (max-width: 768px) {
       .control-group {
@@ -131,139 +154,272 @@
     }
   </style>
 
-  <script>
-    async function runCrawler(crawlerType) {
-      const option = document.getElementById(`${crawlerType}-option`).value;
-      const pagesElement = document.getElementById(`${crawlerType}-pages`);
-      const pages = pagesElement ? pagesElement.value : 5;
-      const outputContent = document.getElementById('output-content');
+<script>
+  let chart = null;
 
-      setActiveTab(crawlerType);
-      outputContent.innerHTML = `开始爬取${getCrawlerTypeName(crawlerType)}数据...\n`;
+  async function runCrawler(crawlerType) {
+    const option = document.getElementById(`${crawlerType}-option`).value;
+    const pagesElement = document.getElementById(`${crawlerType}-pages`);
+    const pages = pagesElement ? pagesElement.value : 5;
+    const outputContent = document.getElementById('output-content');
 
-      try {
-        const response = await fetch('/run_crawler', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ crawler_type: crawlerType, option, pages })
-        });
-        const result = await response.json();
-
-        outputContent.innerHTML = "";
-
-        // 如果是 Bilibili 数据并且是数组，就进行输出和可视化
-        if (crawlerType === 'bilibili' && Array.isArray(result)) {
-          // 在文字区域打印每个视频简要信息
-          result.forEach(item => {
-            outputContent.innerHTML += `视频标题：${item.title} - UP名称：${item.up_name} - 播放量：${item.play_count}\n`;
-          });
-          // 绘制 Chart.js 图表
-          drawBilibiliChart(result);
-        } else if (Array.isArray(result)) {
-          // 其余新浪、GitHub 数组输出
-          result.forEach(item => {
-            outputContent.innerHTML += item + "\n";
-          });
-        } else {
-          // 普通对象或错误提示
-          outputContent.innerHTML = JSON.stringify(result, null, 2);
-        }
-      } catch (error) {
-        outputContent.innerHTML = "错误: " + error;
+    // Show or hide the chart toggle based on the crawler type
+    const chartToggle = document.querySelector('.chart-toggle');
+    if (chartToggle) {
+      // Hide chart toggle for Sina
+      if (crawlerType === 'sina') {
+        chartToggle.style.display = 'none';
+      } else {
+        chartToggle.style.display = 'flex';
       }
     }
 
-    // 绘制 Bilibili 播放量柱状图
-    // index.html 中的 drawBilibiliChart 函数修改
+    setActiveTab(crawlerType);
+    outputContent.innerHTML = `开始爬取${getCrawlerTypeName(crawlerType)}数据...<br>`;
 
-    function drawBilibiliChart(videoData) {
-        // 如果已经有 canvas，先清理
-        const existingCanvas = document.getElementById('bilibiliChart');
-        if (existingCanvas) {
-            existingCanvas.remove();
-        }
+    try {
+      const response = await fetch('/run_crawler', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ crawler_type: crawlerType, option, pages })
+      });
+      const result = await response.json();
 
-        // 创建一个新的 canvas 用于图表
-        const chartCanvas = document.createElement('canvas');
-        chartCanvas.id = 'bilibiliChart';
-        document.querySelector('.output-section').appendChild(chartCanvas);
+      outputContent.innerHTML = "";
 
-        // 准备数据 (X轴标签与播放量)
-        const labels = [];
-        const counts = [];
-
-        videoData.forEach(item => {
-            labels.push(item.title);
-            // 解析播放量（处理带单位的数字）
-            let count = 0;
-            const playCount = item.play_count;
-            if (playCount.includes('亿')) {
-                count = parseFloat(playCount.replace('亿', '')) * 100000000;
-            } else if (playCount.includes('万')) {
-                count = parseFloat(playCount.replace('万', '')) * 10000;
-            } else {
-                count = parseInt(playCount.replace(/\D/g, ''), 10) || 0;
-            }
-            counts.push(count);
+      if (crawlerType === 'sina' && Array.isArray(result)) {
+        // Convert "\n" to actual HTML line breaks
+        let newsOutput = "";
+        result.forEach(item => {
+          newsOutput += item.replace(/\n/g, "<br>") + "<br><br>";
         });
+        outputContent.innerHTML = newsOutput;
+      } else if (crawlerType === 'bilibili' && Array.isArray(result)) {
+        // Restore chart toggle for Bilibili and draw chart
+        result.forEach(item => {
+          outputContent.innerHTML += `视频标题：${item.title} - UP名称：${item.up_name} - 播放量：${item.play_count}<br>`;
+        });
+        drawBilibiliChart(result);
+      } else if (crawlerType === 'github' && Array.isArray(result)) {
+        // Restore chart toggle for GitHub and draw chart
+        result.forEach(item => {
+          outputContent.innerHTML += `项目名称：${item.项目名称} - 总星标数：${item.总星标数} - 新增星标数：${item.新增星标数}<br>`;
+        });
+        drawGitHubChart(result);
+      } else {
+        outputContent.innerHTML = JSON.stringify(result, null, 2);
+      }
+    } catch (error) {
+      outputContent.innerHTML = "错误: " + error;
+    }
+  }
 
-        new Chart(chartCanvas, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: '播放量',
-                    data: counts,
-                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        ticks: {
-                            autoSkip: false,
-                            maxRotation: 45,
-                            minRotation: 45
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            // 自定义 y 轴刻度格式化
-                            callback: function(value) {
-                                if (value >= 100000000) {
-                                    return (value / 100000000).toFixed(1) + '亿';
-                                }
-                                if (value >= 10000) {
-                                    return (value / 10000).toFixed(0) + '万';
-                                }
-                                return value;
+  function drawBilibiliChart(videoData) {
+    removeExistingChart();
+
+    const chartCanvas = document.createElement('canvas');
+    chartCanvas.id = 'bilibiliChart';
+    document.querySelector('.output-section').appendChild(chartCanvas);
+
+    const labels = [];
+    const counts = [];
+
+    videoData.forEach(item => {
+        labels.push(item.title);
+        let count = 0;
+        const playCount = item.play_count;
+        if (playCount.includes('亿')) {
+            count = parseFloat(playCount.replace('亿', '')) * 100000000;
+        } else if (playCount.includes('万')) {
+            count = parseFloat(playCount.replace('万', '')) * 10000;
+        } else {
+            count = parseInt(playCount.replace(/\D/g, ''), 10) || 0;
+        }
+        counts.push(count);
+    });
+
+    chart = new Chart(chartCanvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '播放量',
+                data: counts,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            if (value >= 100000000) {
+                                return (value / 100000000).toFixed(1) + '亿';
                             }
+                            if (value >= 10000) {
+                                return (value / 10000).toFixed(0) + '万';
+                            }
+                            return value;
                         }
                     }
                 }
             }
-        });
-    }
-    function setActiveTab(crawlerType) {
-      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-      document.querySelector(`[data-crawler="${crawlerType}"]`).classList.add('active');
-    }
+        }
+    });
+  }
 
-    function getCrawlerTypeName(crawlerType) {
-      const types = {
-        'sina': '新浪新闻',
-        'github': 'GitHub热门项目',
-        'bilibili': 'Bilibili视频'
-      };
-      return types[crawlerType] || crawlerType;
+  function drawGitHubChart(projectData) {
+    removeExistingChart();
+
+    const chartCanvas = document.createElement('canvas');
+    chartCanvas.id = 'githubChart';
+    document.querySelector('.output-section').appendChild(chartCanvas);
+
+    const labels = projectData.map(item => item.项目名称);
+    const totalStars = projectData.map(item => item.总星标数);
+    const recentStars = projectData.map(item => item.新增星标数);
+
+    chart = new Chart(chartCanvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '总星标数',
+                data: totalStars,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }, {
+                label: '新增星标数',
+                data: recentStars,
+                backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value;
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+  }
+
+  function setActiveTab(crawlerType) {
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`[data-crawler="${crawlerType}"]`).classList.add('active');
+  }
+
+  function getCrawlerTypeName(crawlerType) {
+    const types = {
+      'sina': '新浪新闻',
+      'github': 'GitHub 热门项目',
+      'bilibili': 'Bilibili 视频'
+    };
+    return types[crawlerType] || crawlerType;
+  }
+
+  function removeExistingChart() {
+    if (chart) {
+        chart.destroy();
     }
-  </script>
+    const existingCanvas = document.querySelector('.output-section canvas');
+    if (existingCanvas) {
+        existingCanvas.remove();
+    }
+  }
+
+  function toggleChart(type) {
+    const buttons = document.querySelectorAll('.chart-toggle button');
+    buttons.forEach(button => button.classList.remove('active'));
+    document.querySelector(`.chart-toggle button[onclick="toggleChart('${type}')"]`).classList.add('active');
+
+    const outputContent = document.getElementById('output-content');
+    const projectData = JSON.parse(outputContent.innerHTML);
+
+    const labels = projectData.map(item => item.项目名称);
+    const totalStars = projectData.map(item => item.总星标数);
+    const recentStars = projectData.map(item => item.新增星标数);
+
+    removeExistingChart();
+
+    const chartCanvas = document.createElement('canvas');
+    chartCanvas.id = 'githubChart';
+    document.querySelector('.output-section').appendChild(chartCanvas);
+
+    chart = new Chart(chartCanvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: type === 'totalStars' ? '总星标数' : '新增星标数',
+                data: type === 'totalStars' ? totalStars : recentStars,
+                backgroundColor: type === 'totalStars' ? 'rgba(54, 162, 235, 0.6)' : 'rgba(255, 99, 132, 0.6)',
+                borderColor: type === 'totalStars' ? 'rgba(54, 162, 235, 1)' : 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value;
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+  }
+</script>
 </head>
 <body>
   <header>
@@ -319,6 +475,10 @@
         <button class="tab-button" data-crawler="bilibili">Bilibili 封面</button>
       </div>
       <div id="output-content" class="output-area">等待开始爬取数据...</div>
+      <div class="chart-toggle">
+        <button class="active" onclick="toggleChart('totalStars')">总星标数</button>
+        <button onclick="toggleChart('recentStars')">新增星标数</button>
+      </div>
     </div>
   </div>
 </body>

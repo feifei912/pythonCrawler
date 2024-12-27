@@ -44,12 +44,34 @@ class GitHubTrendingFetcher:
                 # 获取项目名称和链接
                 name_tag = project.find('h2', class_='h3 lh-condensed')
                 project_name = name_tag.text.strip().replace("\n", " ").replace(" ", "") if name_tag else "未知"
-
                 link = "https://github.com" + name_tag.a['href'] if name_tag and name_tag.a else "无链接"
 
-                project_str = f"{index}. 程序：{project_name}；\n跳转：{link}\n"
+                # 获取项目星标数和最近增加的星标数
+                stars_tag = project.find('a', class_='Link Link--muted d-inline-block mr-3')
+                total_stars = int(stars_tag.text.strip().replace(',', '')) if stars_tag else 0
+                stars_recently = project.find('span', class_='d-inline-block float-sm-right').text.strip()
+
+                # 处理不同时间范围的星标数据
+                if "stars today" in stars_recently:
+                    stars_recently = int(stars_recently.replace(' stars today', '').replace(',', ''))
+                    stars_description = "今日新增星标数"
+                elif "stars this week" in stars_recently:
+                    stars_recently = int(stars_recently.replace(' stars this week', '').replace(',', ''))
+                    stars_description = "本周新增星标数"
+                elif "stars this month" in stars_recently:
+                    stars_recently = int(stars_recently.replace(' stars this month', '').replace(',', ''))
+                    stars_description = "本月新增星标数"
+                else:
+                    stars_recently = 0
+                    stars_description = "新增星标数"
+
+                project_str = f"{index}. 项目：{project_name}；\n总星标数：{total_stars}；\n{stars_description}：{stars_recently}\n跳转：{link}\n"
                 print(project_str)
-                all_projects.append(project_str)
+                all_projects.append({
+                    "项目名称": project_name,
+                    "总星标数": total_stars,
+                    "新增星标数": stars_recently
+                })
 
             # 随机等待一段时间以避免被反爬虫机制检测
             time.sleep(random.uniform(1, 3))
@@ -61,3 +83,4 @@ class GitHubTrendingFetcher:
         except Exception as e:
             print(f"发生错误: {e}")
             return []
+
