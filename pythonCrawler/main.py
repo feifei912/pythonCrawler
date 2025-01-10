@@ -40,7 +40,7 @@ def format_number(num):
     return f'{num:.0f}'
 
 def visualize_bilibili_play_counts(video_data):
-    """使用 Matplotlib 绘制播放量柱状图"""
+    #使用 Matplotlib 绘制播放量柱状图
     titles = []
     counts = []
 
