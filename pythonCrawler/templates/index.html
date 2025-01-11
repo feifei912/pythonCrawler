@@ -197,7 +197,13 @@
         // 为新浪新闻数据添加换行符
         let newsOutput = "";
         result.forEach(item => {
-          newsOutput += item.replace(/\n/g, "<br>") + "<br><br>";
+          if (Array.isArray(item) && item.length === 3) {
+            newsOutput += `标题: ${item[0]}<br>网址: ${item[1]}<br>时间: ${item[2]}<br><br>`;
+          } else if (Array.isArray(item) && item.length === 2) {
+            newsOutput += `类别: ${item[0]}<br>标题: ${item[1]}<br>网址: ${item[2]}<br><br>`;
+          } else {
+            newsOutput += JSON.stringify(item).replace(/\n/g, "<br>") + "<br><br>";
+          }
         });
         outputContent.innerHTML = newsOutput;
       } else if (crawlerType === 'bilibili' && Array.isArray(result)) {
@@ -206,14 +212,14 @@
           outputContent.innerHTML += `视频标题：${item.title} - UP名称：${item.up_name} - 播放量：${item.play_count}<br>`;
         });
         drawBilibiliChart(result);
-      }else if (crawlerType === 'github' && Array.isArray(result)) {
-      // 显示 GitHub 数据和图表
-      result.forEach(item => {
+      } else if (crawlerType === 'github' && Array.isArray(result)) {
+        // 显示 GitHub 数据和图表
+        result.forEach(item => {
           outputContent.innerHTML += `项目名称：<a href="${item.项目链接}" target="_blank">${item.项目名称}</a> - 总星标数：${item.总星标数} - 新增星标数：${item.新增星标数}<br>`;
-      });
-      drawGitHubChart(result, 'totalStars'); // Default to total stars
-      }else {
-        outputContent.innerHTML = JSON.stringify(result, null, 2);
+        });
+        drawGitHubChart(result, 'totalStars'); // Default to total stars
+      } else {
+        outputContent.innerHTML = JSON.stringify(result, null, 2).replace(/\n/g, "<br>");
       }
     } catch (error) {
       outputContent.innerHTML = "错误: " + error;

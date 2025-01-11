@@ -148,7 +148,7 @@ def fetch_sina_news(driver, parent_directory, choice):
     try:
         folder_name = os.path.join(parent_directory, 'News')
         os.makedirs(folder_name, exist_ok=True)
-        sina_fetcher = SinaNewsFetcher(driver, folder_name)
+        sina_fetcher = SinaNewsFetcher(driver, folder_name)  # 确保只传递两个参数
 
         if choice == '1':
             pages = int(input("请输入要抓取的实时新闻页数（默认5页）：") or 5)
