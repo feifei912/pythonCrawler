@@ -1,7 +1,6 @@
 import os
 import csv
-import time
-import random
+from crawler_utils import chrome_options
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -13,21 +12,8 @@ class SinaNewsFetcher:
         self.driver = driver
         self.folder_name = folder_name
 
-    def setup_driver(self):
-        chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-web-security")
-        chrome_options.add_argument("--disable-features=NetworkService")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-software-rasterizer")
-        chrome_options.add_argument("--ignore-certificate-errors")
-        driver = webdriver.Chrome(options=chrome_options)
-        return driver
-
     def fetch_page(self, page):
-        driver = self.setup_driver()
+        driver = webdriver.Chrome(options=chrome_options())
         url = f"https://news.sina.com.cn/roll/#pageid=153&lid=2509&k=&num=50&page={page}"
         print(f"正在抓取第 {page} 页: {url}")
         try:

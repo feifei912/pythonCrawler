@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template, send_from_directory
 import os
+from crawler_utils import chrome_options
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from sina_news_fetcher import SinaNewsFetcher
@@ -9,17 +10,8 @@ from bilibili_covers_fetcher import BilibiliCoversFetcher
 app = Flask(__name__, template_folder='templates')
 
 def run_sina_news_fetcher(option, pages=5):
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-web-security")
-    chrome_options.add_argument("--disable-features=NetworkService")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-software-rasterizer")
-    chrome_options.add_argument("--ignore-certificate-errors")
 
-    driver = webdriver.Chrome(options=chrome_options)
+    driver = webdriver.Chrome(options=chrome_options())
 
     parent_directory = os.path.dirname(os.path.abspath(__file__))
     folder_name = os.path.join(parent_directory, 'News')
@@ -40,17 +32,8 @@ def run_github_trending_fetcher(time_range):
     return github_fetcher.get_github_trending(TRENDING_URLS[time_range])
 
 def run_bilibili_covers_fetcher(video_type):
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-web-security")
-    chrome_options.add_argument("--disable-features=NetworkService")
-    chrome_options.add_argument("--enable-unsafe-swiftshader")
-    chrome_options.add_argument("--disable-software-rasterizer")
-    chrome_options.add_argument("--disable-dev-shm-usage")
 
-    driver = webdriver.Chrome(options=chrome_options)
+    driver = webdriver.Chrome(options=chrome_options())
 
     bilibili_fetcher = BilibiliCoversFetcher(driver, 'BilibiliCovers')
 
