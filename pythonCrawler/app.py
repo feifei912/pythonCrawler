@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, render_template, send_from_directory
 import os
 from crawler_utils import chrome_options
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from sina_news_fetcher import SinaNewsFetcher
 from github_trending_fetcher import GitHubTrendingFetcher, TRENDING_URLS
 from bilibili_covers_fetcher import BilibiliCoversFetcher
