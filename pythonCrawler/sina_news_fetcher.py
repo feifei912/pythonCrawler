@@ -5,7 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class SinaNewsFetcher:
     def __init__(self, driver, folder_name):
@@ -67,13 +67,48 @@ class SinaNewsFetcher:
 
             with ThreadPoolExecutor(max_workers=5) as executor:
                 futures = [executor.submit(self.fetch_page, page) for page in range(1, max_pages + 1)]
-                for future in futures:
+                for future in as_completed(futures):
                     page_news = future.result()
                     all_news.extend(page_news)
                     writer.writerows(page_news)
 
             print(f"\n实时新闻抓取完成，结果已保存至 {realtime_csv_path}")
             return all_news
+
+    def fetch_trending_news_category(self, block):
+        """
+        用于获取特定类别块的新闻的辅助函数
+        """
+        category_news = []
+        try:
+            # 获取新闻类别
+            category_name = block.find_element(By.CSS_SELECTOR, ".lbti h2").text.strip()
+            if not category_name:
+                return []
+
+            print(f"\n类别: {category_name}")
+            rows = block.find_elements(By.CSS_SELECTOR, "table tbody tr")
+
+            for row in rows:
+                try:
+                    if row.find_elements(By.CSS_SELECTOR, "th"):
+                        continue
+
+                    # 获取新闻标题和链接
+                    title_element = row.find_element(By.CSS_SELECTOR, "td.ConsTi a")
+                    title = title_element.text.strip()
+                    url = title_element.get_attribute("href")
+
+                    if title and url:
+                        news_str = f"热门新闻 - 类别: {category_name}, \n标题: {title}, \n链接: {url}"
+                        print(news_str)
+                        category_news.append([category_name, title, url])
+                except Exception as e:
+                    print(f"解析热门新闻条目失败: {e}")
+                    continue
+        except Exception as e:
+            print(f"解析类别失败: {e}")
+        return category_news
 
     def fetch_trending_news(self):
         # 设置保存热门新闻的 CSV 文件路径
@@ -95,36 +130,12 @@ class SinaNewsFetcher:
 
                 news_blocks = self.driver.find_elements(By.CSS_SELECTOR, ".loopblk")
 
-                for block in news_blocks:
-                    try:
-                        # 获取新闻类别
-                        category_name = block.find_element(By.CSS_SELECTOR, ".lbti h2").text.strip()
-                        if not category_name:
-                            continue
-
-                        print(f"\n类别: {category_name}")
-                        rows = block.find_elements(By.CSS_SELECTOR, "table tbody tr")
-
-                        for row in rows:
-                            try:
-                                if row.find_elements(By.CSS_SELECTOR, "th"):
-                                    continue
-
-                                # 获取新闻标题和链接
-                                title_element = row.find_element(By.CSS_SELECTOR, "td.ConsTi a")
-                                title = title_element.text.strip()
-                                url = title_element.get_attribute("href")
-
-                                if title and url:
-                                    news_str = f"热门新闻 - 类别: {category_name}, \n标题: {title}, \n链接: {url}"
-                                    print(news_str)
-                                    writer.writerow([category_name, title, url])
-                                    all_news.append(news_str)
-                            except Exception as e:
-                                print(f"解析热门新闻条目失败: {e}")
-                                continue
-                    except Exception as e:
-                        print(f"解析类别失败: {e}")
+                with ThreadPoolExecutor(max_workers=5) as executor:
+                    futures = [executor.submit(self.fetch_trending_news_category, block) for block in news_blocks]
+                    for future in as_completed(futures):
+                        category_news = future.result()
+                        all_news.extend(category_news)
+                        writer.writerows(category_news)
 
                 print(f"\n热门新闻抓取完成，结果已保存至 {trending_csv_path}")
                 return all_news
