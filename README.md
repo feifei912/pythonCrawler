@@ -6,7 +6,7 @@
 1. 新浪新闻爬虫（实时新闻和热门排行）
 2. GitHub热门项目数据爬取（今日、每周、每月）
 3. Bilibili热门视频信息和封面爬取（入站必刷和每周必看）
-4. 对Bilibili视频进行下载（需要ffmpeg，感谢[BiliVideo_Download](https://github.com/keyblues/BiliVideo_Download/blob/main/bilivideo.py)提供的思路）
+4. 对Bilibili视频进行下载（需要ffmpeg，感谢[BiliVideo_Download](https://github.com/keyblues/BiliVideo_Download)提供的思路）
 
 ## 软件架构
 
