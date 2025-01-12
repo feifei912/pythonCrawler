@@ -1,9 +1,11 @@
 import os
 import time
 from selenium.webdriver.common.by import By
-import requests
 from PIL import Image
 from io import BytesIO
+import asyncio
+import aiohttp
+from aiohttp.client_exceptions import ClientPayloadError
 
 class BilibiliCoversFetcher:
     def __init__(self, driver, save_folder):
@@ -25,6 +27,31 @@ class BilibiliCoversFetcher:
             url = url.split('@')[0]
         return url
 
+    async def fetch_image(self, session, url, image_path, retries=3):
+        for attempt in range(retries):
+            try:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                    if response.status == 200:
+                        content = await response.read()
+                        image = Image.open(BytesIO(content))
+                        if image.mode == 'RGBA':
+                            image = image.convert('RGB')
+                        image.save(image_path)
+                        return
+                    else:
+                        print(f"下载失败，状态码: {response.status}, URL: {url}")
+            except (ClientPayloadError, aiohttp.ClientError) as e:
+                print(f"下载封面时出现错误: {e}, 尝试次数: {attempt + 1}/{retries}")
+                if attempt + 1 == retries:
+                    print(f"下载失败，URL: {url}")
+
+    async def download_images(self, image_urls):
+        async with aiohttp.ClientSession() as session:
+            tasks = []
+            for url, image_path in image_urls:
+                tasks.append(self.fetch_image(session, url, image_path))
+            await asyncio.gather(*tasks)
+
     def download_bilibili_covers(self, url):
         # 打开指定的 URL
         self.driver.get(url)
@@ -42,6 +69,7 @@ class BilibiliCoversFetcher:
 
         videos = self.driver.find_elements(By.CSS_SELECTOR, '.video-card')
         all_videos = []
+        image_urls = []
 
         for video in videos[:30]:
             try:
@@ -71,21 +99,19 @@ class BilibiliCoversFetcher:
                 all_videos.append(single_video_data)
 
                 # 下载封面图片 (如需)
-                response = requests.get(cover_url, stream=True)
-                if response.status_code == 200:
-                    image = Image.open(BytesIO(response.content))
-                    if image.mode == 'RGBA':
-                        image = image.convert('RGB')
-
-                    parent_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                    save_path = os.path.join(parent_folder, 'BilibiliCovers')
-                    os.makedirs(save_path, exist_ok=True)
-                    image_path = os.path.join(save_path, f"{safe_title}.jpg")
-                    image.save(image_path)
-                else:
-                    print(f"下载失败，状态码: {response.status_code}, URL: {cover_url}")
+                parent_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                save_path = os.path.join(parent_folder, 'BilibiliCovers')
+                os.makedirs(save_path, exist_ok=True)
+                image_path = os.path.join(save_path, f"{safe_title}.jpg")
+                image_urls.append((cover_url, image_path))
 
             except Exception as e:
                 print(f"处理视频错误: {e}")
+
+        # 使用多线程异步IO下载图片
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.download_images(image_urls))
+        loop.close()
 
         return all_videos
