@@ -30,7 +30,7 @@
 
 1. **安装依赖**：
     ```
-    pip install pathlib ruamel-yaml requests beautifulsoup4 matplotlib pillow flask
+    pip install pathlib ruamel-yaml requests beautifulsoup4 matplotlib pillow flask aiohttp
     pip install selenium==4.5.0
     ```
 
@@ -115,13 +115,13 @@ python app.py
 - 2025-1-11：更换新浪微博实时新闻为异步IO，提高爬取效率。
 - 2025-1-11：优化了代码逻辑结构，新增文件utils专门保存ChromeDriver设置。
 - 2025-1-12：更换新浪微博热门新闻为异步IO，提高爬取效率。
+- 2025-1-12：将bilibili封面下载更改为异步IO，极大提高了下载速度。
 
 ###### 出现问题
 - ~~2025-1-11：B站每周必看出现问题，无法爬取到数据~~   
 2025-1-11：玄学问题，下午测试正常，目测是因为网络问题，若网页加载过慢会导致数据爬取失败。
 - ~~2025-1-11：新浪微博热门新闻在前端页面上输出格式错误。~~   
 2025-1-12：通过修改热门新闻返回的数据格式，解决了这个问题。
-- 
 ---
 
 #### 注意事项
