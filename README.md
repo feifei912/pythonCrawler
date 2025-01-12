@@ -71,7 +71,7 @@
 - 通过命令行交互界面选择要执行的功能。
 - 跟随提示输入相应的选项。
 - 查看输出结果和生成的数据可视化图表。
-- 图表悬停可查看具体数据。
+- 图表悬停可查看具体数据。   
 ![image](https://github.com/user-attachments/assets/2d7808c6-e653-4de0-aec2-cff22ad8aeb1)
 
 **2. 浏览器界面 (app.py)**：
@@ -79,7 +79,7 @@
 - 直接在浏览器中运行爬虫，无需在终端中输入命令。
 - 在浏览器中查看爬取的数据和生成的数据可视化图表。
 - 点击相应的按钮执行相应的功能。
-- 图表悬停可查看具体数据。
+- 图表悬停可查看具体数据。   
 ![image](https://github.com/user-attachments/assets/57533841-ca73-49aa-b223-4ccf37ae723e)
 
 
@@ -101,7 +101,7 @@ python app.py
 
 - 新浪新闻数据保存在`News`文件夹。
 - Bilibili视频封面保存在`BilibiliCovers`文件夹。
-- 可视化图表会自动显示。
+- 可视化图表会自动显示。   
 ![image](https://github.com/user-attachments/assets/57fcc17f-ca77-4926-b036-fca2790589f0)
 
 #### 更新日志
