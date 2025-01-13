@@ -47,12 +47,19 @@ def run_bilibili_covers_fetcher(video_type):
     driver.quit()
     return video_data
 
+quality_map = {
+    "1080P": 80,
+    "720P": 64,
+    "480P": 32,
+    "360P": 16
+}
+
 @app.route('/run_bili_download', methods=['POST'])
 def run_bili_download():
     data = request.json
     bvid = data.get('bvid', '').strip()
     quality = data.get('quality', '80')
-    sess_data = data.get('sessData', '')
+    sess_data = data.get('sessData', '').strip()
     is_collection = data.get('isCollection', False)
     start_page = data.get('startPage', 1)
     end_page = data.get('endPage', 1)
@@ -63,19 +70,25 @@ def run_bili_download():
         return jsonify({'message': 'SESSDATA 为空，无法下载'}), 400
 
     downloader = BiliVideoDownloader()
-    # 通过 Video 类或者直接设置 downloader 的 cookie
-    # downloader.set_cookie(sess_data)  # 如果你在类里有类似的方法，请相应修改
+    downloader.set_cookie(sess_data)
 
-    # 这里仅作示例，具体调用方式与你的 bilidownload.py 结构相关
+    # 设置保存目录
+    directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'DownloadedVideos')
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    # 将前端的质量参数映射到实际的质量值
+    quality_value = quality_map.get(quality, 80)
+
     try:
         if is_collection:
             # 批量下载：从 start_page 到 end_page
             for page_idx in range(start_page, end_page + 1):
-                downloader.download_video(bvid, directory='DownloadedVideos', quality=quality, pages=page_idx)
+                downloader.download_video(bvid, directory=directory, quality=quality_value, pages=page_idx)
             message = f"合集下载完成：从第 {start_page} 集到第 {end_page} 集"
         else:
             # 单个下载
-            downloader.download_video(bvid, directory='DownloadedVideos', quality=quality, pages=1)
+            downloader.download_video(bvid, directory=directory, quality=quality_value, pages=1)
             message = "单视频下载完成"
     except Exception as e:
         return jsonify({'message': f'下载出现错误: {e}'}), 500

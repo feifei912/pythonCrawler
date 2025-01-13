@@ -12,15 +12,21 @@ class BiliVideoDownloader:
         self.video = Video()
         self.errer_download = []
 
+    def set_cookie(self, sess_data):
+        self.video.cookies = {"SESSDATA": sess_data}
+
     def download_video(self, bvid, directory, quality=80, pages=1):
         """下载单个或多个视频"""
         if not self.inspect_bvid(bvid):
             print('无效的BV号')
             return False
 
+        # 确保目录存在
         if not self.is_directory_exist(directory):
-            print('无效的目录')
-            return False
+            os.makedirs(directory)
+            if not self.is_directory_exist(directory):
+                print('无效的目录')
+                return False
 
         # 如果是合集，创建目录
         if pages > 1:
@@ -45,6 +51,8 @@ class BiliVideoDownloader:
             videore, audiore = self.video.get_video(bvid, pages=page, quality=quality)
             total_size = self.get_bit(videore, audiore)
             print(f"BV: {bvid} 页面: {page} 状态: 下载中, 质量: {quality}, 大小: {self.size(total_size)}")
+            print(f"视频 URL: {videore.url}")
+            print(f"音频 URL: {audiore.url}")
 
             # 下载并合并
             filename_temp = self.save(directory, videore, audiore)
@@ -100,26 +108,37 @@ class BiliVideoDownloader:
     def save(self, directory, videore, audiore):
         """优化后的异步保存视频和音频文件"""
         filename_temp = os.path.join(directory, str(time.time()))
+        max_retries = 3  # 最大重试次数
+        chunk_size = 8 * 1024 * 1024  # 8MB 块
+        chunk_count = 16  # 16个并发下载块
+        download_timeout = 5  # 超时时间 (秒)
 
         async def download_file(url, filename, headers, cookies, description):
-            chunk_size = 4 * 1024 * 1024  # 4MB 块
             total_size = 0
-            downloaded = 0
+            downloaded = [0]  # 使用列表以便在嵌套函数中修改
 
             async def download_range(start, end):
-                nonlocal downloaded
                 range_headers = headers.copy()
                 range_headers['Range'] = f'bytes={start}-{end}'
 
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(url, headers=range_headers, cookies=cookies) as response:
-                        async with aiofiles.open(filename + f'.part{start}', 'wb') as f:
-                            async for chunk in response.content.iter_chunked(chunk_size):
-                                if chunk:
-                                    await f.write(chunk)
-                                    downloaded += len(chunk)
-                                    percentage = (downloaded / total_size) * 100 if total_size else 0
-                                    print(f"\r{description}: {percentage:.1f}%", end="", flush=True)
+                for retry in range(max_retries):
+                    try:
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get(url, headers=range_headers, cookies=cookies) as response:
+                                async with aiofiles.open(filename + f'.part{start}', 'wb') as f:
+                                    async for chunk in response.content.iter_chunked(chunk_size):
+                                        if chunk:
+                                            await f.write(chunk)
+                                            downloaded[0] += len(chunk)
+                                            percentage = (downloaded[0] / total_size) * 100 if total_size else 0
+                                            print(f"\r{description}: {percentage:.1f}%", end="", flush=True)
+                                            # 重置超时计时器
+                                            await asyncio.sleep(0)
+                        break  # 成功下载后跳出重试循环
+                    except Exception as e:
+                        print(f"下载块 {start}-{end} 时出错: {str(e)}，重试 {retry + 1}/{max_retries}")
+                        if retry == max_retries - 1:
+                            raise
 
             # 获取文件大小
             async with aiohttp.ClientSession() as session:
@@ -127,7 +146,6 @@ class BiliVideoDownloader:
                     total_size = int(response.headers.get('content-length', 0))
 
             # 分块下载设置
-            chunk_count = 8  # 8个并发下载块
             chunk_size = max(total_size // chunk_count, 1024 * 1024)  # 确保每块至少1MB
             chunks = []
 
@@ -136,10 +154,14 @@ class BiliVideoDownloader:
                 start = i * chunk_size
                 end = start + chunk_size - 1 if i < chunk_count - 1 else total_size - 1
                 if start < total_size:  # 确保不会超出文件大小
-                    chunks.append(download_range(start, end))
+                    chunks.append(asyncio.wait_for(download_range(start, end), timeout=download_timeout))
 
             # 并发下载
-            await asyncio.gather(*chunks)
+            try:
+                await asyncio.gather(*chunks)
+            except Exception as e:
+                print(f"下载文件 {description} 时出错: {str(e)}")
+                return False
 
             # 合并文件块
             async with aiofiles.open(filename, 'wb') as outfile:
@@ -155,6 +177,7 @@ class BiliVideoDownloader:
                         continue  # 跳过不存在的分块文件
 
             print()  # 换行
+            return True
 
         async def download_both():
             tasks = []
@@ -178,13 +201,17 @@ class BiliVideoDownloader:
                     "音频下载"
                 )
             )
-            await asyncio.gather(*tasks)
+            # 独立执行任务
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            return all(result is True for result in results)
 
         # 使用线程池执行异步任务
-        with ThreadPoolExecutor(max_workers=8) as executor:
+        with ThreadPoolExecutor(max_workers=16) as executor:
             future = executor.submit(lambda: asyncio.run(download_both()))
             try:
-                future.result()  # 等待下载完成
+                success = future.result()  # 等待下载完成
+                if not success:
+                    raise Exception("下载过程中发生错误")
             except Exception as e:
                 print(f"下载出错: {str(e)}")
                 raise
@@ -242,7 +269,7 @@ class Video:
                           "Chrome/108.0.0.0 Safari/537.36 "
         }
         # 初始化 cookies
-        self.cookies = {"SESSDATA": "54b706cd%2C1752117184%2C7341a%2A11CjC174HHBR2pkxVvLGIn2rrmRRQbPrwgAdoqIYUdhuO93sRd7fbC7MXg2hXSRb9L5awSVmhPQVBOY1ZVdk5QeDBIYU5YUFo5LVJNbjNCR0dUenY1Ql9wR3g3UVZSaFpKazd2XzBLQzFjWk9ucWY5cDV3aEMyLTFKNjllN01GOE5PeVZNQjEwZ25RIIEC"}
+        self.cookies = {}
 
     def set_cookie(self, cookie):
         """ 设置cookie """
@@ -282,10 +309,16 @@ class Video:
             data = response.json()
             if data['code'] == 0:
                 quality_dict = []
-                if len(data['data']) > 3:
+                if 'dash' in data['data']:
                     for i in data['data']['dash']['video']:
                         quality_dict.append(i['id'])
                 return quality_dict
+            else:
+                print(f"获取质量列表时出错: {data['message']}")
+                return []
+        else:
+            print(f"请求质量列表时出错: {response.status_code}")
+            return []
 
     def request_url(self, bvid, cid):
         """ 获取视频和音频的url """
@@ -295,15 +328,27 @@ class Video:
             data = response.json()
             if data['code'] == 0:
                 return data['data']
+            else:
+                print(f"获取视频和音频URL时出错: {data['message']}")
+                return None
+        else:
+            print(f"请求视频和音频URL时出错: {response.status_code}")
+            return None
 
     def get_video(self, bvid, pages=1, quality=80):
         """ 视频下载 """
-        quality_dict = {}
-        data = self.request_url(bvid, self.get_cid(bvid, pages))
-        for i in data['dash']['video']:
-            quality_dict[i['id']] = i['baseUrl']
-        video_url = quality_dict[quality]
+        cid = self.get_cid(bvid, pages)
+        quality_list = self.get_quality(bvid, cid)
+        print(f"可用质量参数: {quality_list}")
+        if quality not in quality_list:
+            raise ValueError(f"无效的质量参数: {quality}")
+        data = self.request_url(bvid, cid)
+        if data is None:
+            raise ValueError("无法获取视频和音频的URL")
+        video_url = next(i['baseUrl'] for i in data['dash']['video'] if i['id'] == quality)
         audio_url = data['dash']['audio'][0]['baseUrl']
+        print(f"视频 URL: {video_url}")
+        print(f"音频 URL: {audio_url}")
         self.videore = requests.get(url=video_url, headers=self.headers, cookies=self.cookies, stream=True)
         self.audiore = requests.get(url=audio_url, headers=self.headers, cookies=self.cookies, stream=True)
         return self.videore, self.audiore

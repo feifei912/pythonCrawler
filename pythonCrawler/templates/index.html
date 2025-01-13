@@ -383,7 +383,10 @@
 
     function setActiveTab(crawlerType) {
       document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-      document.querySelector(`[data-crawler="${crawlerType}"]`).classList.add('active');
+      const activeButton = document.querySelector(`[data-crawler="${crawlerType}"]`);
+      if (activeButton) {
+        activeButton.classList.add('active');
+      }
 
       if (crawlerType === 'github') {
         setGitHubChartToggleButtons('totalStars');
@@ -444,6 +447,7 @@
     }
 
     // 点击“下载视频”触发
+    // 点击“下载视频”触发
     async function downloadBiliVideo() {
       const bvid = document.getElementById('bvid-input').value.trim();
       const quality = document.getElementById('video-quality').value;
@@ -479,7 +483,6 @@
         outputContent.innerHTML += "下载异常：" + err + "\n";
       }
     }
-
   </script>
 
 
