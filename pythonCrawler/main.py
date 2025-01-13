@@ -212,7 +212,7 @@ def fetch_bilibili_covers(driver):
 
     # 将下载到的视频信息打印
     for idx, item in enumerate(video_data):
-        print(f"{idx+1}. {item['title']} | UP主：{item['up_name']} | 播放量：{item['play_count']}| BV ID：{item['bv_id']}")
+        print(f"{idx+1}. {item['title']} | UP主：{item['up_name']} | 播放量：{item['play_count']}| BV_ID：{item['bv_id']}")
 
     # 通过 Matplotlib 可视化
     visualize_bilibili_play_counts(video_data)
