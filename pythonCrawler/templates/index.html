@@ -182,6 +182,16 @@
         flex-direction: column;
       }
     }
+
+    /* 添加样式限制选择框宽度 */
+    #video-quality {
+      max-width: 200px;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
   </style>
 
   <script>
@@ -469,7 +479,7 @@
         outputContent.innerHTML += "下载异常：" + err + "\n";
       }
     }
-    
+
   </script>
 
 
@@ -525,7 +535,13 @@
         <h2>Bilibili 视频下载</h2>
         <div class="control-inputs">
           <!-- BVID 输入框 -->
-          <input type="text" id="bvid-input" placeholder="请输入视频 BVID" style="min-width:200px;" />
+          <input type="text" id="bvid-input" placeholder="请输入视频 BVID"
+            style="min-width:200px;min-height: 27px;border: 1px solid #ccc;border-radius: 4px;" />
+
+          <!-- 记录 SESSDATA Cookie -->
+          <input type="text" id="sessdata-input" placeholder="请输入 SESSDATA"
+            style="min-width:600px;min-height: 27px;border: 1px solid #ccc;border-radius: 4px;"
+            oninput="storeCookie()" />
 
           <!-- 清晰度下拉框 -->
           <select id="video-quality">
@@ -535,15 +551,14 @@
             <option value="16">360P</option>
           </select>
 
-          <!-- 记录 SESSDATA Cookie -->
-          <input type="text" id="sessdata-input" placeholder="请输入 SESSDATA" style="min-width:200px;"
-            oninput="storeCookie()" />
-
           <!-- 是否是合集 -->
           <label style="display:flex; align-items:center;">
             <input type="checkbox" id="is-collection" onchange="toggleCollectionInputs()" />
             <span>是合集</span>
           </label>
+
+          <!-- 下载按钮 -->
+          <button onclick="downloadBiliVideo()" style="margin-left: 10px;">下载视频</button>
         </div>
 
         <!-- 合集范围输入框，默认隐藏，通过 JS 控制显示 -->
@@ -551,12 +566,8 @@
           <input type="number" id="start-page" placeholder="起始视频页" />
           <input type="number" id="end-page" placeholder="终止视频页" />
         </div>
-
-        <!-- 下载按钮 -->
-        <div style="margin-top:10px;">
-          <button onclick="downloadBiliVideo()">下载视频</button>
-        </div>
       </div>
+
     </div>
 
     <!-- 统一输出区域 -->
