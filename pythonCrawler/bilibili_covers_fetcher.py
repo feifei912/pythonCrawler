@@ -112,6 +112,13 @@ class BilibiliCoversFetcher:
                     'cover_url': cover_url
                 }
 
+                print(f"视频标题：{title}")
+                print(f"UP主：{up_name}")
+                print(f"播放量：{play_count}")
+                print(f"BV号：{bv_id}")
+                print(f"视频链接：https://www.bilibili.com/video/{bv_id}")
+                print("-" * 50)
+
                 all_videos.append(single_video_data)
 
                 # 下载封面图片
