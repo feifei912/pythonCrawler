@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- 网页标题与 Favicon -->
   <title>pythonCrawler</title>
-  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon"/>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
 
   <!-- 引入 Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -17,12 +18,14 @@
         forced-color-adjust: none;
       }
     }
+
     body {
       margin: 0;
       padding: 0;
       font-family: "Microsoft YaHei", Arial, sans-serif;
       background: #f0f2f5;
     }
+
     header {
       background-color: #0073e6;
       color: #fff;
@@ -30,8 +33,17 @@
       text-align: center;
       margin-bottom: 2em;
     }
-    h1 { margin: 0; }
-    .container { width: 90%; max-width: 1200px; margin: 0 auto; }
+
+    h1 {
+      margin: 0;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
     .controls-container {
       display: flex;
       justify-content: space-between;
@@ -39,33 +51,39 @@
       margin-bottom: 2em;
       flex-wrap: wrap;
     }
+
     .control-group {
       flex: 1;
       min-width: 300px;
       background: #fff;
       padding: 1.5em;
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
+
     .control-group h2 {
       margin-top: 0;
       margin-bottom: 1em;
       font-size: 1.2em;
       color: #333;
     }
+
     .control-inputs {
       display: flex;
       gap: 10px;
       align-items: center;
       flex-wrap: wrap;
     }
-    select, input[type="number"] {
+
+    select,
+    input[type="number"] {
       padding: 0.6em;
       border: 1px solid #ccc;
       border-radius: 4px;
       flex: 1;
       min-width: 100px;
     }
+
     button {
       background-color: #0073e6;
       color: #fff;
@@ -76,16 +94,19 @@
       white-space: nowrap;
       transition: background-color 0.3s;
     }
+
     button:hover {
       background-color: #005bb5;
     }
+
     .output-section {
       background: #fff;
       padding: 2em;
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       position: relative;
     }
+
     .output-area {
       margin-top: 1em;
       padding: 1.5em;
@@ -102,6 +123,7 @@
       line-height: 1.6;
       color: #333;
     }
+
     .tab-buttons {
       margin-bottom: 1em;
       display: flex;
@@ -109,6 +131,7 @@
       flex-wrap: wrap;
       justify-content: center;
     }
+
     .tab-button {
       padding: 0.5em 1em;
       background-color: #f0f0f0;
@@ -117,10 +140,12 @@
       cursor: pointer;
       transition: all 0.3s;
     }
+
     .tab-button.active {
       background-color: #0073e6;
       color: white;
     }
+
     .chart-toggle {
       position: absolute;
       top: 10px;
@@ -128,6 +153,7 @@
       display: flex;
       gap: 5px;
     }
+
     .chart-toggle button {
       padding: 0.3em 0.6em;
       background-color: #fff;
@@ -136,256 +162,319 @@
       cursor: pointer;
       transition: background-color 0.3s;
     }
+
     .chart-toggle button:hover {
       background-color: #f0f0f0;
     }
+
     .chart-toggle button.active {
       background-color: #0073e6;
       color: white;
     }
+
     /* 响应式设计 */
     @media (max-width: 768px) {
       .control-group {
         min-width: 100%;
       }
+
       .controls-container {
         flex-direction: column;
       }
     }
   </style>
 
-<script>
-  let chart = null;
-  let currentProjectData = null;
+  <script>
+    let chart = null;
+    let currentProjectData = null;
 
-  async function runCrawler(crawlerType) {
-    const option = document.getElementById(`${crawlerType}-option`).value;
-    const pagesElement = document.getElementById(`${crawlerType}-pages`);
-    const pages = pagesElement ? pagesElement.value : 5;
-    const outputContent = document.getElementById('output-content');
+    async function runCrawler(crawlerType) {
+      const option = document.getElementById(`${crawlerType}-option`).value;
+      const pagesElement = document.getElementById(`${crawlerType}-pages`);
+      const pages = pagesElement ? pagesElement.value : 5;
+      const outputContent = document.getElementById('output-content');
 
-    // 获取图表切换按钮容器
-    const chartToggle = document.querySelector('.chart-toggle');
+      // 获取图表切换按钮容器
+      const chartToggle = document.querySelector('.chart-toggle');
 
-    // 根据爬虫类型控制图表切换按钮的显示/隐藏
-    if (chartToggle) {
-      chartToggle.style.display = crawlerType === 'github' ? 'flex' : 'none';
-    }
-
-    // 如果是新浪爬虫，移除现有的图表
-    if (crawlerType === 'sina') {
-      removeExistingChart();
-    }
-
-    setActiveTab(crawlerType);
-    outputContent.innerHTML = `开始爬取${getCrawlerTypeName(crawlerType)}数据...<br>`;
-
-    try {
-      const response = await fetch('/run_crawler', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ crawler_type: crawlerType, option, pages })
-      });
-      const result = await response.json();
-
-      outputContent.innerHTML = "";
-      currentProjectData = result; // Store the result for chart toggling
-
-      if (crawlerType === 'sina' && Array.isArray(result)) {
-        // 为新浪新闻数据添加换行符
-        let newsOutput = "";
-        result.forEach(item => {
-          if (Array.isArray(item) && item.length === 3) {
-            newsOutput += `标题: ${item[0]}<br>网址: ${item[1]}<br>时间: ${item[2]}<br><br>`;
-          } else if (Array.isArray(item) && item.length === 2) {
-            newsOutput += `类别: ${item[0]}<br>标题: ${item[1]}<br>网址: ${item[2]}<br><br>`;
-          } else {
-            newsOutput += JSON.stringify(item).replace(/\n/g, "<br>") + "<br><br>";
-          }
-        });
-        outputContent.innerHTML = newsOutput;
-      } else if (crawlerType === 'bilibili' && Array.isArray(result)) {
-        // 显示 Bilibili 数据和图表
-        result.forEach(item => {
-          outputContent.innerHTML += `视频标题：${item.title} - UP名称：${item.up_name} - 播放量：${item.play_count} - BV_ID：${item.bv_id}<br>`;
-        });
-        drawBilibiliChart(result);
-      } else if (crawlerType === 'github' && Array.isArray(result)) {
-        // 显示 GitHub 数据和图表
-        result.forEach(item => {
-          outputContent.innerHTML += `项目名称：<a href="${item.项目链接}" target="_blank">${item.项目名称}</a> - 总星标数：${item.总星标数} - 新增星标数：${item.新增星标数}<br>`;
-        });
-        drawGitHubChart(result, 'totalStars'); // Default to total stars
-      } else {
-        outputContent.innerHTML = JSON.stringify(result, null, 2).replace(/\n/g, "<br>");
+      // 根据爬虫类型控制图表切换按钮的显示/隐藏
+      if (chartToggle) {
+        chartToggle.style.display = crawlerType === 'github' ? 'flex' : 'none';
       }
-    } catch (error) {
-      outputContent.innerHTML = "错误: " + error;
+
+      // 如果是新浪爬虫，移除现有的图表
+      if (crawlerType === 'sina') {
+        removeExistingChart();
+      }
+
+      setActiveTab(crawlerType);
+      outputContent.innerHTML = `开始爬取${getCrawlerTypeName(crawlerType)}数据...<br>`;
+
+      try {
+        const response = await fetch('/run_crawler', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ crawler_type: crawlerType, option, pages })
+        });
+        const result = await response.json();
+
+        outputContent.innerHTML = "";
+        currentProjectData = result; // Store the result for chart toggling
+
+        if (crawlerType === 'sina' && Array.isArray(result)) {
+          // 为新浪新闻数据添加换行符
+          let newsOutput = "";
+          result.forEach(item => {
+            if (Array.isArray(item) && item.length === 3) {
+              newsOutput += `标题: ${item[0]}<br>网址: ${item[1]}<br>时间: ${item[2]}<br><br>`;
+            } else if (Array.isArray(item) && item.length === 2) {
+              newsOutput += `类别: ${item[0]}<br>标题: ${item[1]}<br>网址: ${item[2]}<br><br>`;
+            } else {
+              newsOutput += JSON.stringify(item).replace(/\n/g, "<br>") + "<br><br>";
+            }
+          });
+          outputContent.innerHTML = newsOutput;
+        } else if (crawlerType === 'bilibili' && Array.isArray(result)) {
+          // 显示 Bilibili 数据和图表
+          result.forEach(item => {
+            outputContent.innerHTML += `视频标题：${item.title} - UP名称：${item.up_name} - 播放量：${item.play_count} - BV_ID：${item.bv_id}<br>`;
+          });
+          drawBilibiliChart(result);
+        } else if (crawlerType === 'github' && Array.isArray(result)) {
+          // 显示 GitHub 数据和图表
+          result.forEach(item => {
+            outputContent.innerHTML += `项目名称：<a href="${item.项目链接}" target="_blank">${item.项目名称}</a> - 总星标数：${item.总星标数} - 新增星标数：${item.新增星标数}<br>`;
+          });
+          drawGitHubChart(result, 'totalStars'); // Default to total stars
+        } else {
+          outputContent.innerHTML = JSON.stringify(result, null, 2).replace(/\n/g, "<br>");
+        }
+      } catch (error) {
+        outputContent.innerHTML = "错误: " + error;
+      }
     }
-  }
 
-  function drawBilibiliChart(videoData) {
-    removeExistingChart();
+    function drawBilibiliChart(videoData) {
+      removeExistingChart();
 
-    const chartCanvas = document.createElement('canvas');
-    chartCanvas.id = 'bilibiliChart';
-    document.querySelector('.output-section').appendChild(chartCanvas);
+      const chartCanvas = document.createElement('canvas');
+      chartCanvas.id = 'bilibiliChart';
+      document.querySelector('.output-section').appendChild(chartCanvas);
 
-    const labels = [];
-    const counts = [];
+      const labels = [];
+      const counts = [];
 
-    videoData.forEach(item => {
+      videoData.forEach(item => {
         labels.push(item.title);
         let count = 0;
         const playCount = item.play_count;
         if (playCount.includes('亿')) {
-            count = parseFloat(playCount.replace('亿', '')) * 100000000;
+          count = parseFloat(playCount.replace('亿', '')) * 100000000;
         } else if (playCount.includes('万')) {
-            count = parseFloat(playCount.replace('万', '')) * 10000;
+          count = parseFloat(playCount.replace('万', '')) * 10000;
         } else {
-            count = parseInt(playCount.replace(/\D/g, ''), 10) || 0;
+          count = parseInt(playCount.replace(/\D/g, ''), 10) || 0;
         }
         counts.push(count);
-    });
+      });
 
-    chart = new Chart(chartCanvas, {
+      chart = new Chart(chartCanvas, {
         type: 'bar',
         data: {
-            labels: labels,
-            datasets: [{
-                label: '播放量',
-                data: counts,
-                backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }]
+          labels: labels,
+          datasets: [{
+            label: '播放量',
+            data: counts,
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+          }]
         },
         options: {
-            responsive: true,
-            scales: {
-                x: {
-                    ticks: {
-                        autoSkip: false,
-                        maxRotation: 45,
-                        minRotation: 45
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            if (value >= 100000000) {
-                                return (value / 100000000).toFixed(1) + '亿';
-                            }
-                            if (value >= 10000) {
-                                return (value / 10000).toFixed(0) + '万';
-                            }
-                            return value;
-                        }
-                    }
-                }
-            }
-        }
-    });
-  }
-
-  function drawGitHubChart(projectData, type = 'totalStars') {
-    removeExistingChart();
-
-    const chartCanvas = document.createElement('canvas');
-    chartCanvas.id = 'githubChart';
-    document.querySelector('.output-section').appendChild(chartCanvas);
-
-    const labels = projectData.map(item => item.项目名称);
-    const dataset = {
-      label: type === 'totalStars' ? '总星标数' : '新增星标数',
-      data: type === 'totalStars' ? projectData.map(item => item.总星标数) : projectData.map(item => item.新增星标数),
-      backgroundColor: type === 'totalStars' ? 'rgba(54, 162, 235, 0.6)' : 'rgba(255, 99, 132, 0.6)',
-      borderColor: type === 'totalStars' ? 'rgba(54, 162, 235, 1)' : 'rgba(255, 99, 132, 1)',
-      borderWidth: 1
-    };
-
-    chart = new Chart(chartCanvas, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [dataset]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: {
-                    ticks: {
-                        autoSkip: false,
-                        maxRotation: 45,
-                        minRotation: 45
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return value;
-                        }
-                    }
-                }
+          responsive: true,
+          scales: {
+            x: {
+              ticks: {
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 45
+              }
             },
-            plugins: {
-                legend: {
-                    display: false
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function (value) {
+                  if (value >= 100000000) {
+                    return (value / 100000000).toFixed(1) + '亿';
+                  }
+                  if (value >= 10000) {
+                    return (value / 10000).toFixed(0) + '万';
+                  }
+                  return value;
                 }
+              }
             }
+          }
         }
-    });
-  }
-
-  function setActiveTab(crawlerType) {
-    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-    document.querySelector(`[data-crawler="${crawlerType}"]`).classList.add('active');
-
-    if (crawlerType === 'github') {
-      setGitHubChartToggleButtons('totalStars');
+      });
     }
-  }
 
-  function getCrawlerTypeName(crawlerType) {
-    const types = {
-      'sina': '新浪新闻',
-      'github': 'GitHub 热门项目',
-      'bilibili': 'Bilibili 视频'
-    };
-    return types[crawlerType] || crawlerType;
-  }
+    function drawGitHubChart(projectData, type = 'totalStars') {
+      removeExistingChart();
 
-  function removeExistingChart() {
-    if (chart) {
+      const chartCanvas = document.createElement('canvas');
+      chartCanvas.id = 'githubChart';
+      document.querySelector('.output-section').appendChild(chartCanvas);
+
+      const labels = projectData.map(item => item.项目名称);
+      const dataset = {
+        label: type === 'totalStars' ? '总星标数' : '新增星标数',
+        data: type === 'totalStars' ? projectData.map(item => item.总星标数) : projectData.map(item => item.新增星标数),
+        backgroundColor: type === 'totalStars' ? 'rgba(54, 162, 235, 0.6)' : 'rgba(255, 99, 132, 0.6)',
+        borderColor: type === 'totalStars' ? 'rgba(54, 162, 235, 1)' : 'rgba(255, 99, 132, 1)',
+        borderWidth: 1
+      };
+
+      chart = new Chart(chartCanvas, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [dataset]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              ticks: {
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 45
+              }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function (value) {
+                  return value;
+                }
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              display: false
+            }
+          }
+        }
+      });
+    }
+
+    function setActiveTab(crawlerType) {
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`[data-crawler="${crawlerType}"]`).classList.add('active');
+
+      if (crawlerType === 'github') {
+        setGitHubChartToggleButtons('totalStars');
+      }
+    }
+
+    function getCrawlerTypeName(crawlerType) {
+      const types = {
+        'sina': '新浪新闻',
+        'github': 'GitHub 热门项目',
+        'bilibili': 'Bilibili 视频'
+      };
+      return types[crawlerType] || crawlerType;
+    }
+
+    function removeExistingChart() {
+      if (chart) {
         chart.destroy();
-    }
-    const existingCanvas = document.querySelector('.output-section canvas');
-    if (existingCanvas) {
+      }
+      const existingCanvas = document.querySelector('.output-section canvas');
+      if (existingCanvas) {
         existingCanvas.remove();
+      }
     }
-  }
 
-  function toggleChart(type) {
-    setGitHubChartToggleButtons(type);
+    function toggleChart(type) {
+      setGitHubChartToggleButtons(type);
 
-    if (currentProjectData) {
-      drawGitHubChart(currentProjectData, type);
+      if (currentProjectData) {
+        drawGitHubChart(currentProjectData, type);
+      }
     }
-  }
 
-  function setGitHubChartToggleButtons(type) {
-    const buttons = document.querySelectorAll('.chart-toggle button');
-    buttons.forEach(button => button.classList.remove('active'));
-    document.querySelector(`.chart-toggle button[onclick="toggleChart('${type}')"]`).classList.add('active');
-  }
-</script>
+    function setGitHubChartToggleButtons(type) {
+      const buttons = document.querySelectorAll('.chart-toggle button');
+      buttons.forEach(button => button.classList.remove('active'));
+      document.querySelector(`.chart-toggle button[onclick="toggleChart('${type}')"]`).classList.add('active');
+    }
+    // 页面加载时自动填充 SESSDATA（若 localStorage 中已存储）
+    window.addEventListener('load', () => {
+      const savedSessData = localStorage.getItem('bili_sessdata');
+      if (savedSessData) {
+        document.getElementById('sessdata-input').value = savedSessData;
+      }
+    });
+
+    // 当用户输入时，自动存储到 localStorage
+    function storeCookie() {
+      const sessData = document.getElementById('sessdata-input').value;
+      localStorage.setItem('bili_sessdata', sessData);
+    }
+
+    // 根据是否为合集显示或隐藏输入框
+    function toggleCollectionInputs() {
+      const isCollection = document.getElementById('is-collection').checked;
+      const collectionRange = document.getElementById('collection-range');
+      collectionRange.style.display = isCollection ? 'flex' : 'none';
+    }
+
+    // 点击“下载视频”触发
+    async function downloadBiliVideo() {
+      const bvid = document.getElementById('bvid-input').value.trim();
+      const quality = document.getElementById('video-quality').value;
+      const sessData = document.getElementById('sessdata-input').value.trim();
+      const isCollection = document.getElementById('is-collection').checked;
+      let startPage = 1, endPage = 1;
+      if (isCollection) {
+        startPage = Number(document.getElementById('start-page').value) || 1;
+        endPage = Number(document.getElementById('end-page').value) || 1;
+      }
+
+      const outputContent = document.getElementById('output-content');
+      setActiveTab('bili-download'); // 与原先 tab 切换逻辑一致即可
+      outputContent.innerHTML = "开始下载 Bilibili 视频...\n";
+
+      // 请求后端
+      try {
+        const response = await fetch('/run_bili_download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bvid,
+            quality,
+            sessData,
+            isCollection,
+            startPage,
+            endPage
+          })
+        });
+        const result = await response.json();
+        outputContent.innerHTML += result.message + "\n";
+      } catch (err) {
+        outputContent.innerHTML += "下载异常：" + err + "\n";
+      }
+    }
+    
+  </script>
 
 
 </head>
+
 <body>
   <header>
     <h1>pythonCrawler - 爬虫演示</h1>
@@ -401,7 +490,7 @@
             <option value="realtime">实时新闻</option>
             <option value="trending">热门新闻</option>
           </select>
-          <input type="number" id="sina-pages" placeholder="页数" value="5" min="1" max="20" style="width: 80px"/>
+          <input type="number" id="sina-pages" placeholder="页数" value="5" min="1" max="20" style="width: 80px" />
           <button onclick="runCrawler('sina')">获取新闻</button>
         </div>
       </div>
@@ -430,6 +519,44 @@
           <button onclick="runCrawler('bilibili')">获取封面</button>
         </div>
       </div>
+
+      <!-- Bilibili 视频下载功能模块 -->
+      <div class="control-group">
+        <h2>Bilibili 视频下载</h2>
+        <div class="control-inputs">
+          <!-- BVID 输入框 -->
+          <input type="text" id="bvid-input" placeholder="请输入视频 BVID" style="min-width:200px;" />
+
+          <!-- 清晰度下拉框 -->
+          <select id="video-quality">
+            <option value="80" selected>1080P</option>
+            <option value="64">720P</option>
+            <option value="32">480P</option>
+            <option value="16">360P</option>
+          </select>
+
+          <!-- 记录 SESSDATA Cookie -->
+          <input type="text" id="sessdata-input" placeholder="请输入 SESSDATA" style="min-width:200px;"
+            oninput="storeCookie()" />
+
+          <!-- 是否是合集 -->
+          <label style="display:flex; align-items:center;">
+            <input type="checkbox" id="is-collection" onchange="toggleCollectionInputs()" />
+            <span>是合集</span>
+          </label>
+        </div>
+
+        <!-- 合集范围输入框，默认隐藏，通过 JS 控制显示 -->
+        <div class="control-inputs" id="collection-range" style="margin-top:10px; display:none;">
+          <input type="number" id="start-page" placeholder="起始视频页" />
+          <input type="number" id="end-page" placeholder="终止视频页" />
+        </div>
+
+        <!-- 下载按钮 -->
+        <div style="margin-top:10px;">
+          <button onclick="downloadBiliVideo()">下载视频</button>
+        </div>
+      </div>
     </div>
 
     <!-- 统一输出区域 -->
@@ -438,7 +565,9 @@
         <button class="tab-button active" data-crawler="sina">新浪新闻</button>
         <button class="tab-button" data-crawler="github">GitHub 热门</button>
         <button class="tab-button" data-crawler="bilibili">Bilibili 封面</button>
+
       </div>
+
       <div id="output-content" class="output-area">等待开始爬取数据...</div>
       <div class="chart-toggle" style="display: none;">
         <button class="active" onclick="toggleChart('totalStars')">总星标数</button>
@@ -447,4 +576,5 @@
     </div>
   </div>
 </body>
+
 </html>

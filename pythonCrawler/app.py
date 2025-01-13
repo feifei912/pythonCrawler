@@ -5,6 +5,7 @@ from selenium import webdriver
 from sina_news_fetcher import SinaNewsFetcher
 from github_trending_fetcher import GitHubTrendingFetcher, TRENDING_URLS
 from bilibili_covers_fetcher import BilibiliCoversFetcher
+from bilidownload import BiliVideoDownloader
 
 app = Flask(__name__, template_folder='templates')
 
@@ -45,6 +46,41 @@ def run_bilibili_covers_fetcher(video_type):
 
     driver.quit()
     return video_data
+
+@app.route('/run_bili_download', methods=['POST'])
+def run_bili_download():
+    data = request.json
+    bvid = data.get('bvid', '').strip()
+    quality = data.get('quality', '80')
+    sess_data = data.get('sessData', '')
+    is_collection = data.get('isCollection', False)
+    start_page = data.get('startPage', 1)
+    end_page = data.get('endPage', 1)
+
+    if not bvid:
+        return jsonify({'message': 'BVID 为空，请检查输入'}), 400
+    if not sess_data:
+        return jsonify({'message': 'SESSDATA 为空，无法下载'}), 400
+
+    downloader = BiliVideoDownloader()
+    # 通过 Video 类或者直接设置 downloader 的 cookie
+    # downloader.set_cookie(sess_data)  # 如果你在类里有类似的方法，请相应修改
+
+    # 这里仅作示例，具体调用方式与你的 bilidownload.py 结构相关
+    try:
+        if is_collection:
+            # 批量下载：从 start_page 到 end_page
+            for page_idx in range(start_page, end_page + 1):
+                downloader.download_video(bvid, directory='DownloadedVideos', quality=quality, pages=page_idx)
+            message = f"合集下载完成：从第 {start_page} 集到第 {end_page} 集"
+        else:
+            # 单个下载
+            downloader.download_video(bvid, directory='DownloadedVideos', quality=quality, pages=1)
+            message = "单视频下载完成"
+    except Exception as e:
+        return jsonify({'message': f'下载出现错误: {e}'}), 500
+
+    return jsonify({'message': message})
 
 @app.route('/run_crawler', methods=['POST'])
 def run_crawler():
