@@ -209,7 +209,7 @@
       } else if (crawlerType === 'bilibili' && Array.isArray(result)) {
         // 显示 Bilibili 数据和图表
         result.forEach(item => {
-          outputContent.innerHTML += `视频标题：${item.title} - UP名称：${item.up_name} - 播放量：${item.play_count}<br>`;
+          outputContent.innerHTML += `视频标题：${item.title} - UP名称：${item.up_name} - 播放量：${item.play_count} - BV ID：${item.bv_id}<br>`;
         });
         drawBilibiliChart(result);
       } else if (crawlerType === 'github' && Array.isArray(result)) {
