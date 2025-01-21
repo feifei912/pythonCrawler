@@ -7,10 +7,11 @@ import aiofiles
 import requests
 from concurrent.futures import ThreadPoolExecutor
 
+
 class BiliVideoDownloader:
     def __init__(self):
         self.video = Video()
-        self.errer_download = []
+        self.error_download = []
 
     def set_cookie(self, sess_data):
         self.video.cookies = {"SESSDATA": sess_data}
@@ -39,8 +40,8 @@ class BiliVideoDownloader:
             print(f"\n正在处理视频 {page} 的 {pages}")
             self.download_single_video(bvid, directory, quality, page)
 
-        if self.errer_download:
-            print(f"BV: {bvid} 下载失败的页面: {self.errer_download}")
+        if self.error_download:
+            print(f"BV: {bvid} 下载失败的页面: {self.error_download}")
         else:
             print(f"BV: {bvid} 所有下载已完成")
 
@@ -64,7 +65,7 @@ class BiliVideoDownloader:
             return True
         except Exception as e:
             print(f"下载视频时出错: {str(e)}")
-            self.errer_download.append(page)
+            self.error_download.append(page)
             return False
 
     def merge_videos(self, filename_temp, filename_new):
@@ -111,7 +112,7 @@ class BiliVideoDownloader:
         max_retries = 3  # 最大重试次数
         chunk_size = 8 * 1024 * 1024  # 8MB 块
         chunk_count = 16  # 16个并发下载块
-        download_timeout = 5  # 超时时间 (秒)
+        download_timeout = 10  # 超时时间 (秒)
 
         async def download_file(url, filename, headers, cookies, description):
             total_size = 0
@@ -259,6 +260,7 @@ class BiliVideoDownloader:
         title = data['data']['pages'][pages - 1]['part']
         return 'P' + str(pages) + ' ' + self.title_filterate(title)
 
+
 class Video:
     def __init__(self):
         self.api_info = 'https://api.bilibili.com/x/web-interface/view?bvid={}'
@@ -367,6 +369,9 @@ def main():
         os.makedirs(directory)
 
     # 获取用户输入
+    sess_data = input("输入SESSDATA cookie: ")
+    downloader.set_cookie(sess_data)
+
     bvid = input("输入BV号: ")
     quality = int(input("输入质量 (80为1080p, 64为720p, 32为480p, 16为360p): "))
     is_collection = input("是否为合集? (y/n): ").lower() == 'y'
