@@ -310,11 +310,11 @@ class Video:
         if response.status_code == 200:
             data = response.json()
             if data['code'] == 0:
-                quality_dict = []
+                quality_dict = set()  # 使用set而不是list来存储
                 if 'dash' in data['data']:
                     for i in data['data']['dash']['video']:
-                        quality_dict.append(i['id'])
-                return quality_dict
+                        quality_dict.add(i['id'])
+                return sorted(list(quality_dict), reverse=True)  # 转换回列表并降序排序
             else:
                 print(f"获取质量列表时出错: {data['message']}")
                 return []
@@ -359,27 +359,55 @@ class Video:
 def main():
     downloader = BiliVideoDownloader()
 
-    # 创建保存目录（当前文件夹的父级文件夹中的"video"文件夹）
-    current_dir = os.path.dirname(os.path.abspath(__file__))  # 获取当前文件所在目录
-    parent_dir = os.path.dirname(current_dir)  # 获取父级目录
-    directory = os.path.join(parent_dir, "video")  # 在父级目录下创建video文件夹路径
+    # 创建保存目录
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(current_dir)
+    directory = os.path.join(parent_dir, "video")
 
-    # 如果video文件夹不存在，则创建
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    # 获取用户输入
+    # 获取SESSDATA和BV号
     sess_data = input("输入SESSDATA cookie: ")
     downloader.set_cookie(sess_data)
-
     bvid = input("输入BV号: ")
-    quality = int(input("输入质量 (80为1080p, 64为720p, 32为480p, 16为360p): "))
-    is_collection = input("是否为合集? (y/n): ").lower() == 'y'
 
-    if is_collection:
-        pages = int(input("输入要下载的视频数量: "))
+    # 先获取可用的视频质量选项
+    cid = downloader.video.get_cid(bvid, 1)  # 获取第一个视频的cid
+    if cid:
+        quality_list = downloader.video.get_quality(bvid, cid)
+        print("\n可用的视频质量选项：")
+        # 注意：80及以上的质量参数需要B站大会员账号的cookie才能下载
+        quality_map = {
+            127: "8K",
+            120: "4K",
+            116: "1080P高码率",
+            112: "1080P+",
+            80: "1080P",
+            64: "720P",
+            32: "480P",
+            16: "360P"
+        }
+        for q in quality_list:
+            print(f"- {q}: {quality_map.get(q, '未知质量')}")
     else:
-        pages = 1
+        print("获取视频信息失败")
+        return
+
+    # 让用户选择质量
+    while True:
+        try:
+            quality = int(input("\n请输入想要下载的视频质量代码: "))
+            if quality in quality_list:
+                break
+            else:
+                print("输入的质量代码无效，请从上面的列表中选择")
+        except ValueError:
+            print("请输入有效的数字")
+
+    # 询问是否为合集
+    is_collection = input("是否为合集? (y/n): ").lower() == 'y'
+    pages = int(input("输入要下载的视频数量: ")) if is_collection else 1
 
     # 开始下载
     downloader.download_video(bvid, directory, quality, pages)
